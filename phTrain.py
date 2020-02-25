@@ -7,7 +7,7 @@ satellite = pd.read_csv(input_path, header=None)
 outlier_number = 3000
 base_lower = 25
 threshold = 0.618
-output_path = "./output/base" + str(base_lower) + "-thr" + str(threshold)
+output_path = "./output/base" + str(base_lower) + "-thr" + str(threshold) + "-out" + str(outlier_number)
 
 X_train = np.array(satellite.iloc[outlier_number:, :-1])
 model = top.PHNovDet(max_dimension=1, threshold=threshold, base=base_lower)
