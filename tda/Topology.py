@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn import preprocessing
 from tqdm import tqdm
 import copy
-from TimeStamps import display_time
+from tda.TimeStamps import displaytime
 
 
 class PHNovDet(object):
@@ -52,7 +52,7 @@ class PHNovDet(object):
 
         return gh.bottleneck_distance(diag0, diag_point0)
 
-    @display_time
+    @displaytime
     def grow(self, input_path, outlier_number, output_path, threshold=1.0, base_index=10, tree_height=100):
         '''
         param input_path: pandas数据集的路径
@@ -91,7 +91,7 @@ class PHNovDet(object):
             print('self data shape: ', self.data.shape[0])  # 打印计算中使用的生长数据的形状
             print('B data shape: ', B.shape)  # 打印出真实生长数据的形状
 
-    @display_time
+    @displaytime
     def crop(self, input_path, outlier_number, output_path, threshold=1.0, base_lower=10, cycle=100):
         '''
         param input_path: pandas数据集的路径
@@ -131,7 +131,7 @@ class PHNovDet(object):
             print('self data shape: ', self.data.shape[0])  # 打印计算中使用的生长数据的形状
             print('B data shape: ', B.shape)  # 打印出真实生长数据的形状
 
-    @display_time
+    @displaytime
     def reduce(self, input_path, outlier_number, output_path, threshold=1.0, base_lower=10):
         '''
         param input_path: pandas数据集的路径
@@ -170,7 +170,7 @@ class PHNovDet(object):
             print('self data shape: ', self.data.shape[0])  # 打印计算中使用的生长数据的形状
             print('B data shape: ', B.shape)  # 打印出真实生长数据的形状
 
-    @display_time
+    @displaytime
     def fit(self, x_train, output_path='.'):
         '''
         param input_path: pandas数据集的路径
@@ -218,7 +218,7 @@ class PHNovDet(object):
                 for item in abandom_point:
                     f.write("%s\n" % item)
 
-    @display_time
+    @displaytime
     def predict(self, x_test):
         y_scores = []
         for i in range(len(x_test)):
@@ -230,11 +230,11 @@ class PHNovDet(object):
         y_scores[y_scores < self.threshold] = -1
         return -y_scores
 
-    @display_time
+    @displaytime
     def score_samples(self, x_test):
         self.predict(x_test)
         return self.scores
 
-    @display_time
+    @displaytime
     def score_samples(self):
         return self.scores

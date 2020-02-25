@@ -1,9 +1,8 @@
 # 装饰器用来计算函数运行时间
-
 import time
 
 
-def display_time(func):
+def displaytime(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
