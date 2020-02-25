@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from tda import Topology as top
+from tda import topology as top
 
 input_path = "./data/satellite-unsupervised-ad.csv"
 satellite = pd.read_csv(input_path, header=None)

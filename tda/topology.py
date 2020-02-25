@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn import preprocessing
 from tqdm import tqdm
 import copy
-from tda.TimeStamps import displaytime
+from tda.timestamps import displaytime
 
 
 class PHNovDet(object):
