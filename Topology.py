@@ -4,9 +4,6 @@ import pandas as pd
 from sklearn import preprocessing
 from tqdm import tqdm
 import copy
-import sys
-
-sys.path.append('../mymodule/')
 from TimeStamps import display_time
 
 
