@@ -5,12 +5,13 @@ from sklearn import preprocessing
 from tqdm import tqdm
 import copy
 from tda.timestamps import displaytime
+from sklearn.model_selection import train_test_split
 
 
 class PHNovDet(object):
 
     def __init__(self, data=None, max_edge_length=42, max_dimension=1, homology_coeff_field=2, min_persistence=0,
-                 threshold=0.05, base=20):
+                 threshold=0.05, base=20, ratio=0.2, M=3, random_state=26):
         self.data = data
         self.max_edge_length = max_edge_length
         self.max_dimension = max_dimension
@@ -19,6 +20,9 @@ class PHNovDet(object):
         self.threshold = threshold
         self.base = base
         self.scores = np.array([])
+        self.ratio = ratio
+        self.M = M
+        self.random_state = random_state
 
     def ph(self, plot=True):
 
@@ -173,11 +177,8 @@ class PHNovDet(object):
     @displaytime
     def fit(self, x_train, output_path='.'):
         '''
-        param input_path: pandas数据集的路径
-        param outlier_number: 数据集中包含的异常点数
-        param output_number: 找到的形状数据集B的输出路径
-        param threshold: 判断是否保留随机选中的数据点的阈值，大于该阈值丢弃该点，小于该阈值保留该点
-        param base_lower: 形状数据集B的最小点数
+        param x_train: the train set
+        param output_path: save the base shape dataset B to output path
         '''
         self.data = x_train
         data = pd.DataFrame(data=x_train)
@@ -187,7 +188,7 @@ class PHNovDet(object):
         if self.base > len(data):
             print("基础数据集的势太小")
         else:
-            try:
+            try:  # for tqdm print time consume
                 with tqdm(np.arange(len(data.index))) as t:
                     for i in t:
                         choice_index = i
@@ -210,25 +211,47 @@ class PHNovDet(object):
             t.close()
 
             B = data.iloc[base_list, :]
-            self.data = np.array(B)
+            self.data = np.array(B)  # the model is being fitted by train set
             B.to_csv(output_path + ".csv")
             print("self data shape: ", data.shape[0])
             print("B data shape: ", B.shape)
-            with open(output_path + ".txt", 'w') as f:
+            with open(output_path + ".txt", 'w') as f:  # write abandom point to file
                 for item in abandom_point:
                     f.write("%s\n" % item)
 
     @displaytime
-    def predict(self, x_test):
+    def fit(self, data):
+        X_train, X_test, y_train, y_test = train_test_split(data, range(len(data)), test_size=self.ratio,
+                                                            random_state=self.random_state)
+        self.data = X_train  # B
+        onepoidis = []
+
+        try:  # for tqdm print time consume
+            with tqdm(range(len(X_test))) as t:
+                for i in t:
+                    onepoidis.append(self.bottleneck(X_test[i], plot=False))
+                self.threshold = np.mean(onepoidis) + self.M * np.std(onepoidis, ddof=1)  # T
+        except KeyboardInterrupt:
+            t.close()
+            raise
+        t.close()
+
+        return self.threshold
+
+    @displaytime
+    def predict(self, x_test):  # compute -1 and 1 respectively for outlier point and inlier point
         y_scores = []
         for i in range(len(x_test)):
             point = x_test[i]
             y_scores.append(self.bottleneck(point, plot=False))
         y_scores = np.array(y_scores)
-        self.scores = copy.deepcopy(y_scores)
-        y_scores[y_scores >= self.threshold] = 1
-        y_scores[y_scores < self.threshold] = -1
-        return -y_scores
+        self.scores = copy.deepcopy(y_scores)  # backup scores value for function score_samples()
+        R = np.max(y_scores) + 1
+        scores = y_scores/R
+        T = self.threshold/R
+        scores[scores >= T] = 1  # big distance convert to 1
+        scores[scores < T] = -1  # small distance convert to -1
+        return -scores  # outlier point label -1 and inlier point label 1
 
     @displaytime
     def score_samples(self, x_test):
