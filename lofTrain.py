@@ -16,7 +16,7 @@ x_test = np.array(satellite.iloc[:test_num, :-1])
 y_test = copy.deepcopy(satellite.iloc[:test_num, -1])
 y_test.replace(['o', 'n'], [-1, 1], inplace=True)
 
-clf = LocalOutlierFactor(novelty=True)
+clf = LocalOutlierFactor(novelty=True, n_neighbors=9)
 
 T = clf.fit(x_train)
 print("threshold: ", T)

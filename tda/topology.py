@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 class PHNovDet(object):
 
     def __init__(self, data=None, max_edge_length=42, max_dimension=1, homology_coeff_field=2, min_persistence=0,
-                 threshold=0.05, base=20, ratio=0.2, M=3, random_state=26):
+                 threshold=0.05, base=20, ratio=0.2, M=3, random_state=26, shuffle=True):
         self.data = data
         self.max_edge_length = max_edge_length
         self.max_dimension = max_dimension
@@ -23,6 +23,7 @@ class PHNovDet(object):
         self.ratio = ratio
         self.M = M
         self.random_state = random_state
+        self.shuffle = shuffle
 
     def ph(self, plot=True):
 
@@ -104,7 +105,7 @@ class PHNovDet(object):
     @displaytime
     def fit(self, data):
         X_train, X_test, y_train, y_test = train_test_split(data, range(len(data)), test_size=self.ratio,
-                                                            random_state=self.random_state)
+                                                            random_state=self.random_state, shuffle=self.shuffle)
         self.data = X_train  # B
         onepoidis = []
 
@@ -140,8 +141,4 @@ class PHNovDet(object):
     @displaytime
     def score_samples(self, x_test):
         self.predict(x_test)
-        return self.scores
-
-    @displaytime
-    def score_samples(self):
         return self.scores
