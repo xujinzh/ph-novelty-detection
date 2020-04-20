@@ -114,6 +114,7 @@ class PHNovDet(object):
                 for i in t:
                     onepoidis.append(self.bottleneck(X_test[i], plot=False))
                 self.threshold = np.mean(onepoidis) + self.M * np.std(onepoidis, ddof=1)  # T
+                # ddof = 1 represent unbiased sample standard deviation
         except KeyboardInterrupt:
             t.close()
             raise
