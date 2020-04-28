@@ -28,4 +28,4 @@ print(predicted)
 y_scores = clf.score_samples(x_test)
 print(y_scores)
 
-roc.plot(y_test=np.array(y_test), y_scores=y_scores, pos_label=1)
+roc.plot(y_test=np.array(y_test), y_scores=y_scores, pos_label=1, title='LOF - ')
