@@ -19,7 +19,7 @@ x_test = np.array(satellite.iloc[:test_num, :-1])
 y_test = copy.deepcopy(satellite.iloc[:test_num, -1])
 y_test.replace(['o', 'n'], [-1, 1], inplace=True)
 
-clf = top.PHNovDet(max_dimension=1, threshold=threshold, base=base_lower, ratio=0.785, M=2, random_state=26,
+clf = top.PHNovDet(max_dimension=1, threshold=threshold, base=base_lower, ratio=0.78125, M=3, random_state=28,
                    shuffle=False)
 clf.fit(x_train)
 

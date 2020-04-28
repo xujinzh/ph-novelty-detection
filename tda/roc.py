@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
 
-def plot(y_test, y_scores, pos_label=None, title=None):
+def plot(y_test, y_scores, pos_label=None, title=None, print_auc=False):
     fpr, tpr, threshold = roc_curve(y_test, y_scores, pos_label=pos_label)
     roc_auc = auc(fpr, tpr)
     plt.title('Receiver Operating Characteristic')
@@ -15,3 +15,5 @@ def plot(y_test, y_scores, pos_label=None, title=None):
     plt.xlabel('False Positive Rate')
     plt.title(title + 'ROC Curve')
     plt.show()
+    if print_auc:
+        return roc_auc
