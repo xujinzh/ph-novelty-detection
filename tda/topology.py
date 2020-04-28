@@ -57,7 +57,7 @@ class PHNovDet(object):
 
         return gh.bottleneck_distance(diag0, diag_point0)
 
-    @displaytime
+    # @displaytime
     def fit(self, x_train, output_path='.'):
         '''
         param x_train: the train set
@@ -102,7 +102,7 @@ class PHNovDet(object):
                 for item in abandom_point:
                     f.write("%s\n" % item)
 
-    @displaytime
+    # @displaytime
     def fit(self, data):
         X_train, X_test, y_train, y_test = train_test_split(data, range(len(data)), test_size=self.ratio,
                                                             random_state=self.random_state, shuffle=self.shuffle)
@@ -122,7 +122,7 @@ class PHNovDet(object):
 
         return self.threshold
 
-    @displaytime
+    # @displaytime
     def predict(self, x_test):  # compute -1 and 1 respectively for outlier point and inlier point
         y_scores = []
         for i in range(len(x_test)):
@@ -139,7 +139,7 @@ class PHNovDet(object):
         y_scores = scores.astype(int)
         return -y_scores  # outlier point label -1 and inlier point label 1
 
-    @displaytime
+    # @displaytime
     def score_samples(self, x_test):
         self.predict(x_test)
         return self.scores
