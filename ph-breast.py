@@ -4,14 +4,15 @@ from tda import topology as top
 from tda import roc
 import copy
 
-head_train = 15  # the index of first novelty point
+novelty = 10
+normal = novelty * 2
+test_num = novelty + normal  # 10 novelty point and 20 normal point
+head_train = test_num + 10  # the index of first novelty point
 span = 100  # the number of train set, and the ratio * span is the base shape data set
 tail_train = head_train + span
 base_lower = 20  # the minimum of the points in base shape data set
 threshold = 1.0
-novelty = 10
-normal = 40
-test_num = novelty + normal  # 10 novelty point and 20 normal point
+
 input_path = "./data/breast-cancer-unsupervised-ad.csv"
 data = pd.read_csv(input_path, header=None)
 x_train = np.array(data.iloc[head_train:tail_train, :-1])
@@ -19,8 +20,8 @@ x_test = np.array(data.iloc[:test_num, :-1])
 y_test = copy.deepcopy(data.iloc[:test_num, -1])
 y_test.replace(['o', 'n'], [-1, 1], inplace=True)
 
-clf = top.PHNovDet(max_dimension=1, threshold=threshold, base=base_lower, ratio=0.85625, M=3, random_state=28,
-                   shuffle=False, sparse=3.0)
+clf = top.PHNovDet(max_dimension=2, threshold=threshold, base=base_lower, ratio=0.7625, M=3, random_state=28,
+                   shuffle=False, sparse=0)
 clf.fit(x_train)
 
 predicted = clf.predict(x_test)

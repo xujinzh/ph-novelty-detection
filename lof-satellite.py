@@ -4,12 +4,13 @@ import pandas as pd
 from tda import roc
 import copy
 
-head_train = 225
+novelty = 75
+normal = novelty * 2
+test_num = novelty + normal
+head_train = test_num + 10
 span = 100
 tail_train = head_train + span
-novelty = 75
-normal = 150
-test_num = novelty + normal
+
 input_path = "./data/satellite-unsupervised-ad.csv"
 satellite = pd.read_csv(input_path, header=None)
 x_train = np.array(satellite.iloc[head_train:tail_train, :-1])
@@ -28,5 +29,5 @@ print(predicted)
 y_scores = clf.score_samples(x_test)
 print(y_scores)
 
-roc.plot(y_test=np.array(y_test), y_scores=y_scores, pos_label=1, title='LOF - ')
+roc.area(y_test=np.array(y_test), y_scores=y_scores, pos_label=1, title='LOF - ')
 

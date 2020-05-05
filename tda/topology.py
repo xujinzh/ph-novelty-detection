@@ -15,7 +15,7 @@ import warnings
 __all__ = ["PHNovDet"]
 
 __author__ = "Jinzhong Xu and Xuzhi Li"
-__version__ = "0.0.1"
+__version__ = "2.0.0"
 __license__ = 'BSD 3-Clause "New" or "Revised" License'
 
 __available_modules = ''
@@ -35,7 +35,7 @@ class PHNovDet(object):
     that have a bigger influence to the shape of the data set.
     These are considered novelties.
 
-    .. versionadded:: 0.1.0
+    .. versionadded:: 2.0.0
 
     :parameter
     max_edge_length : int, optional (default=42)
@@ -78,7 +78,7 @@ class PHNovDet(object):
     """
 
     def __init__(self, data=None, max_edge_length=12.0, max_dimension=1, homology_coeff_field=2, min_persistence=0,
-                 sparse=0.0, threshold=0.05, base=20, ratio=0.2, M=3, random_state=26, shuffle=True):
+                 sparse=0.0, threshold=0.5, base=20, ratio=0.5, M=3, random_state=42, shuffle=True):
         self.data = data
         self.max_edge_length = max_edge_length
         self.max_dimension = max_dimension
@@ -94,10 +94,11 @@ class PHNovDet(object):
         self.shuffle = shuffle
         self.sparse = sparse
 
-    def ph(self, plot=False):
+    def _ph(self, plot=False):
         data = preprocessing.scale(self.data)
         # scaled data has zero mean (\mu = 0) and unit variance (\sigma = 0)
-        rips_complex = gudhi.RipsComplex(points=data, max_edge_length=self.max_edge_length)
+        rips_complex = gudhi.RipsComplex(points=data, max_edge_length=self.max_edge_length, sparse=self.sparse)
+        # sparse for save time
         simplex_tree = rips_complex.create_simplex_tree(max_dimension=self.max_dimension)
         diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coeff_field,
                                            min_persistence=self.min_persistence)
@@ -107,24 +108,63 @@ class PHNovDet(object):
 
         return diagram
 
-    def bottleneck(self, point, plot=False):
-        _diagram = self.ph(plot=plot)
+    def _bottleneck(self, point, plot=False):
+        _diagram = self._ph(plot=plot)
         diagram = []
         for i, d in enumerate(_diagram):
             diagram.append(list(_diagram[i][1]))
 
         temp_data = self.data
         self.data = np.vstack((self.data, point))
-        _diagram_novelty = self.ph(plot=plot)
+        _diagram_novelty = self._ph(plot=plot)
         diagram_novelty = []
         for i, d in enumerate(_diagram_novelty):
             diagram_novelty.append(list(_diagram_novelty[i][1]))
 
         self.data = temp_data
 
-        return gudhi.bottleneck_distance(diagram, diagram_novelty)
+        return gudhi.bottleneck_distance(diagram, diagram_novelty, 0.05)  # e = 0.05 for save time
+
+    def fit(self, X, y=None):
+        X_train, X_test, y_train, y_test = train_test_split(X, range(len(X)), test_size=self.ratio,
+                                                            random_state=self.random_state, shuffle=self.shuffle)
+        self.data = X_train  # Base shape data set
+        thresholds = []
+
+        try:  # for tqdm print time consume
+            with tqdm(range(len(X_test))) as t:
+                for i in t:
+                    thresholds.append(np.min([self._bottleneck(point=X_test[i]), 9.9]))
+                self.threshold = np.mean(thresholds) + self.M * np.std(thresholds, ddof=1)  # T
+                # ddof = 1 represent unbiased sample standard deviation
+        except KeyboardInterrupt:
+            t.close()
+            raise
+        t.close()
+
+        return self.threshold
+
+    def predict(self, x):  # compute -1 and 1 respectively for outlier point and inlier point
+        y_scores = []
+        for i in range(len(x)):
+            point = x[i]
+            y_scores.append(np.min([self._bottleneck(point=point), 99]))
+        y_scores = np.array(y_scores)
+        self.scores = copy.deepcopy(y_scores)  # backup scores value for function score_samples()
+        max_score = np.max(y_scores) + 1
+        scores = y_scores / max_score
+
+        T = self.threshold / max_score
+        scores[scores >= T] = 1  # big distance convert to 1
+        scores[scores < T] = -1  # small distance convert to -1
+        y_scores = scores.astype(int)
+        return -y_scores  # outlier point label -1 and inlier point label 1
 
     # @displaytime
+    def score_samples(self, x):
+        self.predict(x)
+        return self.scores
+
     def OX_fit(self, X, output_path='.'):
         '''
         param x_train: the train set
@@ -149,7 +189,7 @@ class PHNovDet(object):
                         if len(self.data) < self.base:
                             break
                         else:
-                            if self.bottleneck(choice_point) < self.threshold:
+                            if self._bottleneck(choice_point) < self.threshold:
                                 base_list = copy.deepcopy(temp_list)
                             else:
                                 abandom_point.append(choice_index)
@@ -168,45 +208,3 @@ class PHNovDet(object):
             with open(output_path + ".txt", 'w') as f:  # write abandom point to file
                 for item in abandom_point:
                     f.write("%s\n" % item)
-
-    # @displaytime
-    def fit(self, X, y=None):
-        X_train, X_test, y_train, y_test = train_test_split(X, range(len(X)), test_size=self.ratio,
-                                                            random_state=self.random_state, shuffle=self.shuffle)
-        self.data = X_train  # Base shape data set
-        thresholds = []
-
-        try:  # for tqdm print time consume
-            with tqdm(range(len(X_test))) as t:
-                for i in t:
-                    thresholds.append(np.min([self.bottleneck(point=X_test[i]), 9.9]))
-                self.threshold = np.mean(thresholds) + self.M * np.std(thresholds, ddof=1)  # T
-                # ddof = 1 represent unbiased sample standard deviation
-        except KeyboardInterrupt:
-            t.close()
-            raise
-        t.close()
-
-        return self.threshold
-
-    # @displaytime
-    def predict(self, x):  # compute -1 and 1 respectively for outlier point and inlier point
-        y_scores = []
-        for i in range(len(x)):
-            point = x[i]
-            y_scores.append(np.min([self.bottleneck(point=point), 99]))
-        y_scores = np.array(y_scores)
-        self.scores = copy.deepcopy(y_scores)  # backup scores value for function score_samples()
-        max_score = np.max(y_scores) + 1
-        scores = y_scores / max_score
-
-        T = self.threshold / max_score
-        scores[scores >= T] = 1  # big distance convert to 1
-        scores[scores < T] = -1  # small distance convert to -1
-        y_scores = scores.astype(int)
-        return -y_scores  # outlier point label -1 and inlier point label 1
-
-    # @displaytime
-    def score_samples(self, x):
-        self.predict(x)
-        return self.scores

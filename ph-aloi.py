@@ -4,14 +4,15 @@ from tda import topology as top
 from tda import roc
 import copy
 
-head_train = 2000  # the index of first novelty point
-span = 100  # the number of train set, and the ratio * span is the base shape data set
+novelty = 1508
+normal = novelty
+test_num = novelty + normal  # 10 novelty point and 20 normal point
+head_train = test_num + 10  # the index of first novelty point
+span = 1000  # the number of train set, and the ratio * span is the base shape data set
 tail_train = head_train + span
 base_lower = 20  # the minimum of the points in base shape data set
 threshold = 1.0
-novelty = 1508
-normal = 1508
-test_num = novelty + normal  # 10 novelty point and 20 normal point
+
 input_path = "./data/aloi-unsupervised-ad.csv"
 data = pd.read_csv(input_path, header=None)
 x_train = np.array(data.iloc[head_train:tail_train, :-1])
