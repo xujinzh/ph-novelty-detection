@@ -151,14 +151,17 @@ class PHNovDet(object):
             y_scores.append(np.min([self._bottleneck(point=point), 99]))
         y_scores = np.array(y_scores)
         self.scores = copy.deepcopy(y_scores)  # backup scores value for function score_samples()
-        max_score = np.max(y_scores) + 1
-        scores = y_scores / max_score
-
-        T = self.threshold / max_score
-        scores[scores >= T] = 1  # big distance convert to 1
-        scores[scores < T] = -1  # small distance convert to -1
-        y_scores = scores.astype(int)
-        return -y_scores  # outlier point label -1 and inlier point label 1
+        # max_score = np.max(y_scores) + 1
+        # scores = y_scores / max_score
+        # T = self.threshold / max_score
+        # scores[scores >= T] = 1  # big distance convert to 1
+        # scores[scores < T] = -1  # small distance convert to -1
+        binarizer = preprocessing.Binarizer(threshold=self.threshold)  # convert to 0 or 1
+        scores = binarizer.transform([y_scores])
+        y_scores = [1 - 2 * x for x in scores.tolist()[0]]  # convert 0 or 1 to 1 or -1
+        # y_scores = scores.astype(int)
+        y_scores = [int(i) for i in y_scores]
+        return y_scores  # outlier point label -1 and inlier point label 1
 
     # @displaytime
     def score_samples(self, x):

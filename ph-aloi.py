@@ -21,7 +21,7 @@ y_test = copy.deepcopy(data.iloc[:test_num, -1])
 y_test.replace(['o', 'n'], [-1, 1], inplace=True)
 
 clf = top.PHNovDet(max_dimension=1, threshold=threshold, base=base_lower, ratio=0.35, M=3, random_state=28,
-                   shuffle=False, sparse=2.0)
+                   shuffle=False, sparse=0)
 clf.fit(x_train)
 
 predicted = clf.predict(x_test)
