@@ -21,7 +21,7 @@ y_test = copy.deepcopy(satellite.iloc[:test_num, -1])
 y_test.replace(['o', 'n'], [-1, 1], inplace=True)
 
 clf = top.PHNovDet(max_dimension=2, threshold=threshold, base=base_lower, ratio=0.85625, M=3, random_state=28,
-                   shuffle=False, sparse=0)
+                   shuffle=False, sparse=0, max_edge_length=7)
 clf.fit(x_train)
 
 predicted = clf.predict(x_test)

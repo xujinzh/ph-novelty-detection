@@ -6,22 +6,22 @@ import copy
 
 novelty = 1508
 normal = novelty
-test_num = novelty + normal  # 10 novelty point and 20 normal point
-head_train = test_num + 10  # the index of first novelty point
-span = 1000  # the number of train set, and the ratio * span is the base shape data set
+test_num = novelty + normal
+head_train = test_num + 10
+span = 100
 tail_train = head_train + span
-base_lower = 20  # the minimum of the points in base shape data set
+base_lower = 20
 threshold = 1.0
 
-input_path = "./data/aloi-unsupervised-ad.csv"
-data = pd.read_csv(input_path, header=None)
-x_train = np.array(data.iloc[head_train:tail_train, :-1])
-x_test = np.array(data.iloc[:test_num, :-1])
-y_test = copy.deepcopy(data.iloc[:test_num, -1])
+input_path = './data/aloi-unsupervised-ad.csv'
+aloi = pd.read_csv(input_path, header=None)
+x_train = np.array(aloi.iloc[head_train:tail_train, :-1])
+x_test = np.array(aloi.iloc[:test_num, :-1])
+y_test = copy.deepcopy(aloi.iloc[:test_num, -1])
 y_test.replace(['o', 'n'], [-1, 1], inplace=True)
 
-clf = top.PHNovDet(max_dimension=1, threshold=threshold, base=base_lower, ratio=0.35, M=3, random_state=28,
-                   shuffle=False, sparse=0)
+clf = top.PHNovDet(max_dimension=1, threshold=threshold, base=base_lower, ratio=0.7, M=3, random_state=28,
+                   shuffle=False, sparse=0, max_edge_length=7)
 clf.fit(x_train)
 
 predicted = clf.predict(x_test)
@@ -31,3 +31,4 @@ y_scores = clf.score_samples(x_test)
 print(y_scores)
 
 roc.area(y_test=np.array(y_test), y_scores=y_scores, pos_label=-1, title='PH - ')
+
