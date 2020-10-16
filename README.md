@@ -1,6 +1,6 @@
 # Persistent Homology for Novelty Detection (PHND)
 
-## 基于拓扑代数同调理论的新颖点检测算法：PHND
+## 基于代数拓扑同调理论的新颖点检测算法：PHND
 
 ### 代码介绍
 
