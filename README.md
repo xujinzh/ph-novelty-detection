@@ -11,7 +11,7 @@
 1. git clone https://github.com/xujinzh/ph-novelty-detection.git
 2. python main.py
 
-数据使用的是 Harvard Dataverse 中的 **Unsupervised Anomaly Detection Benchmark**，更多数据请访问 [[Unsupervised Anomaly Detection Dataverse](https://dataverse.harvard.edu/dataverse/unsupervised-ad) (Kyushu University)](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OPQMVF) 下载。
+数据使用的是 Harvard Dataverse 中的 **Unsupervised Anomaly Detection Benchmark**，更多数据请访问 [Unsupervised Anomaly Detection Dataverse(Kyushu University)](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OPQMVF) 下载。
 
 ### 依赖包
 
