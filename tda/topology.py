@@ -1,5 +1,4 @@
 # Authors: Jinzhong Xu <jinzhongxu@csu.ac.cn>
-#          Xuzhi Li <xzhli@csu.ac.cn>
 # License: BSD 3-Clause "New" or "Revised" License
 
 import gudhi
@@ -8,16 +7,17 @@ import pandas as pd
 from sklearn import preprocessing
 from tqdm import tqdm
 import copy
-from tda.timestamps import displaytime
+from tda.timestamps import display_time
 from sklearn.model_selection import train_test_split
 import warnings
+import collections
+import operator
+import random
 
 __all__ = ["PHNovDet"]
-
-__author__ = "Jinzhong Xu and Xuzhi Li"
+__author__ = "Jinzhong Xu"
 __version__ = "2.0.0"
 __license__ = 'BSD 3-Clause "New" or "Revised" License'
-
 __available_modules = ''
 __missing_modules = ''
 
@@ -35,7 +35,7 @@ class PHNovDet(object):
     that have a bigger influence to the shape of the data set.
     These are considered novelties.
 
-    .. versionadded:: 2.0.0
+    .. version added:: 2.0.0
 
     :parameter
     max_edge_length : int, optional (default=42)
@@ -44,7 +44,7 @@ class PHNovDet(object):
     max_dimension : int, optional (default=1)
         The max dimension of simplicial complex (Rips complex)
 
-    homology_coeff_filed : int, optional (default=2)
+    homology_coefficient_filed : int, optional (default=2)
         The field for construct homology group
 
     min_persistence : int, optional (default=0)
@@ -73,91 +73,155 @@ class PHNovDet(object):
 
     References
     ----------
-    .. [1] Jinzhong Xu, Xuzhi Li, Ye Li, Lele Xu, Lili Guo, Junrong Du.
+    .. [1] Jinzhong Xu, Lele Xu, Ye Li, Lili Guo.
         Novelty Detection with Topological Signatures.
     """
 
-    def __init__(self, max_edge_length=12.0, max_dimension=1, homology_coeff_field=2, min_persistence=0,
-                 sparse=0.0, threshold=0.5, base=20, ratio=0.5, M=3, random_state=42, shuffle=True):
+    scores = []
+
+    def __init__(self, max_edge_length=12.0, max_dimension=1, homology_coefficient_field=2, min_persistence=0,
+                 sparse=0.0, threshold=0.5, base=15, ratio=0.25, standard_deviation_coefficient=3, random_state=42,
+                 shuffle=True, cross_separation=3):
         self.max_edge_length = max_edge_length
         self.max_dimension = max_dimension
-        self.homology_coeff_field = homology_coeff_field
+        self.homology_coefficient_field = homology_coefficient_field
         self.sparse = sparse
         self.min_persistence = min_persistence
         self.threshold = threshold
         self.base = base
-        self.scores = []
         self.ratio = ratio
-        self.M = M
+        self.standard_deviation_coefficient = standard_deviation_coefficient
         self.random_state = random_state
         self.shuffle = shuffle
         self.sparse = sparse
         self.shape = None
         self.shape_data = None
+        self.cross_separation = cross_separation
 
-    def _diagram(self, data):
+    def _diagram(self, points):
         """
         return diagram in list form
-        :param data: point cloud
+        :param points: point cloud
         :return: persistent diagram in list form
         """
-        _diagram = self._ph(data)
+        _diagram = self._ph(points)
         diagram = []
         for i, d in enumerate(_diagram):
             diagram.append(list(_diagram[i][1]))
         return diagram
 
-    def _ph(self, data):
+    def _ph(self, points):
         """
-        compute persistent diagram by gudhi package
-        :param data: point cloud
+        compute persistent diagram by geometry understanding in higher dimensions package
+        :param points: point cloud
         :return: persistent diagram
         """
-        data = preprocessing.minmax_scale(data)
+        points = preprocessing.minmax_scale(points)
         # minmax_scale(normalization) need less time than scale(standardization)
         # because max_edge_length is ceil(sqrt{numbers of variables}) in minmax_scale; but that is bigger in scale
-        rips_complex = gudhi.RipsComplex(points=data, max_edge_length=self.max_edge_length, sparse=self.sparse)
+
+        rips_complex = gudhi.RipsComplex(points=points, max_edge_length=self.max_edge_length, sparse=self.sparse)
+
         # self.sparse for save time but have different result in every time run
         simplex_tree = rips_complex.create_simplex_tree(max_dimension=self.max_dimension)
-        diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coeff_field,
+        diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
                                            min_persistence=self.min_persistence)
         return diagram
 
+        # data = preprocessing.minmax_scale(points)
+        # landmarks = gudhi.pick_n_random_points(points=data, nb_points=20)
+        # witness_complex = gudhi.EuclideanWitnessComplex(witnesses=data, landmarks=landmarks)
+        # simplex_tree = witness_complex.create_simplex_tree(max_alpha_square=100, limit_dimension=3)
+        # diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
+        #                                    min_persistence=self.min_persistence)
+        # return diagram
+
     @staticmethod
-    def _bottleneck(diagram, diagram_novelty):
+    def _bottleneck(diag1, diag2):
         """
         compute bottleneck distance between diagram and diagram_novelty
-        :param diagram: persistent diagram for shape data in list form
-        :param diagram_novelty: persistent diagram for cup dataset with novelty data and shape date in list form
+        :param diag1: persistent diagram for shape data in list form
+        :param diag2: persistent diagram for cup dataset with novelty data and shape date in list form
         :return: bottleneck distance
         """
-        return gudhi.bottleneck_distance(diagram, diagram_novelty, 0.05)  # e = 0.05 for save time
+        return gudhi.bottleneck_distance(diag1, diag2)
+        # return gudhi.bottleneck.PyCapsule.bottleneck_distance(diagram, diagram_novelty, 0.05)  # e = 0.05 节省时间
 
-    def fit(self, X, y=None):
+    def cross_fit(self, x_data=None, y_data=None):
+        # 交叉划分数据集为训练集和验证集，用训练集作为基数据测试验证集里每一个样本点，选择前1/3
+        for i in range(self.cross_separation):
+            self.random_state += 3
+            x_train, x_cv, y_train, y_cv = train_test_split(x_data, y_data, train_size=self.ratio,
+                                                            random_state=self.random_state)
+            bd = {}
+            for j in range(len(x_cv)):
+                train_one_cv = np.vstack((x_train, x_cv[j]))
+                bd[j] = self._bottleneck(self._diagram(x_train), self._diagram(train_one_cv))
+            sorted_bd = collections.OrderedDict(sorted(bd.items(), key=lambda x: x[1], reverse=False))
+            partial_shape_data = x_cv[list(sorted_bd.keys())[:int(len(x_cv) / 3)]]
+            # 刚开始shape data为空
+            if self.shape_data is None:
+                self.shape_data = partial_shape_data
+            else:
+                self.shape_data = np.vstack((self.shape_data, partial_shape_data))
+        # 剔除重复的样本点
+        self.shape_data = np.unique(self.shape_data, axis=0)
+        self.shape = self._diagram(self.shape_data)
+        return self.shape, self.shape_data
+
+    def fast_fit(self, x_data=None, y_data=None):
+        for i in range(self.cross_separation):
+            if 1 / (self.cross_separation - i) < 1.0:
+
+                x_train, x_data, y_train, y_data = train_test_split(x_data, y_data,
+                                                                    train_size=1 / (self.cross_separation - i),
+                                                                    random_state=self.random_state)
+            else:
+                x_train = x_data
+                y_train = y_data
+            x_train_truth, x_test_truth, y_train_truth, y_test_truth = train_test_split(x_train, y_train,
+                                                                                        train_size=0.5,
+                                                                                        random_state=self.random_state)
+            bd = {}
+            for j in range(len(x_test_truth)):
+                train_one_test = np.vstack((x_train_truth, x_test_truth[j]))
+                bd[j] = self._bottleneck(self._diagram(x_train_truth), self._diagram(train_one_test))
+            sorted_bd = collections.OrderedDict(sorted(bd.items(), key=lambda t: t[1], reverse=False))
+            partial_shape_data = x_test_truth[list(sorted_bd.keys())[:int(len(x_test_truth) / 4)]]
+
+            if self.shape_data is None:
+                self.shape_data = partial_shape_data
+            else:
+                self.shape_data = np.vstack((self.shape_data, partial_shape_data))
+
+        self.shape_data = np.unique(self.shape_data, axis=0)
+        self.shape = self._diagram(self.shape_data)
+        return self.shape, self.shape_data
+
+    def fit(self, x_data=None, y_data=None):
         """
         fit data for shape (persistent diagram) and threshold
-        :param X: point cloud data set
-        :param y: label, default "o" represent normal
+        :param x_data: point cloud data set
+        :param y_data: label, default "o" represent normal
         :return: the shape data or the shape persistent diagram and the threshold
         """
-        X_train, X_test, y_train, y_test = train_test_split(X, range(len(X)), test_size=self.ratio,
+        x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, train_size=self.ratio,
                                                             random_state=self.random_state, shuffle=self.shuffle)
         thresholds = []
-        self.shape_data = X_train
+        self.shape_data = x_train
         self.shape = self._diagram(self.shape_data)
         # optimization : learning for self.shape
-
-        try:  # for tqdm print time consume
-            with tqdm(range(len(X_test))) as t:
+        try:
+            with tqdm(range(len(x_test))) as t:
                 for i in t:
-                    point = X_test[i]
+                    point = x_test[i]
                     data_novelty = np.vstack((self.shape_data, point))
                     diagram_novelty = self._diagram(data_novelty)
                     thresholds.append(np.min([self._bottleneck(self.shape, diagram_novelty), 9.9]))
                 mu = np.mean(thresholds)
                 sigma = np.std(thresholds, ddof=1)
-                self.threshold = mu + self.M * sigma  # T
-                # ddof = 1 represent unbiased sample standard deviation
+                self.threshold = mu + self.standard_deviation_coefficient * sigma  # T
+                # d-dof = 1 represent unbiased sample standard deviation
         except KeyboardInterrupt:
             t.close()
             raise
@@ -165,76 +229,142 @@ class PHNovDet(object):
 
         return self.threshold, self.shape, self.shape_data
 
-    def predict(self, x):  # compute -1 and 1 respectively for outlier point and inlier point
+    def reduce_fit(self, x_data=None, y_data=None):
+        """
+        将数据分成几个子组，每个子组含有样本点大约30左右，然后约简每个子组的样本点，方法如下：
+        对于子组A，依次从A中剔除一个样本点a，得到子组B，计算子组A和子组B之间的拓扑形状距离，如果该距离小于某一个预先定义的阈值，
+        则真正的剔除该点a，依次，遍历完A中每一个点，直到A中的点不小于5个为止。
+        :param x_data: 训练集
+        :param y_data: 训练集的标签，默认都是‘n’，因为只有正常点作为训练集
+        :return: 训练集的拓扑骨架集合
+        """
+        data_number = len(x_data)
+        # print("data number:", data_number)
+        subset_number = data_number // 20
+        # print("subset number:", subset_number)
+        for i in range(subset_number):
+            if 1 / (subset_number - i) < 1.0:
+                x_train, x_data, y_train, y_data = train_test_split(x_data, y_data,
+                                                                    train_size=1 / (subset_number - i),
+                                                                    random_state=self.random_state)
+            else:
+                x_train = x_data
+                y_train = y_data
+            number_x_train = len(x_train)
+            index = 0
+            for j in range(number_x_train):
+                distance_reduce = self._bottleneck(self._diagram(x_train), self._diagram(np.delete(x_train, index, 0)))
+                # print("distance:", distance_reduce)
+                if len(x_train) < 5:
+                    # print("len of x_train less than 5")
+                    break
+                if distance_reduce < self.threshold:
+                    # print("distance reduce less than {0}".format(self.threshold))
+                    x_train = np.delete(x_train, index, 0)
+                    index -= 1
+                    # print("number of x_train after remove point is:", len(x_train))
+                index += 1
+            if self.shape_data is None:
+                self.shape_data = x_train
+            else:
+                self.shape_data = np.vstack((self.shape_data, x_train))
+        # self.shape_data = np.unique(self.shape_data, axis=0)
+        self.shape = self._diagram(self.shape_data)
+        return self.shape, self.shape_data
+
+    def grow_fit(self, x_data=None, y_data=None):
+        """
+        增长模式获得拓扑骨架数据集。
+        随机从数据集中选取5个点作为基，把其他点作为待验证点，如果其他点的加入改变了基数据集的拓扑形状，则认为该点是拓扑骨架数据集的一部分
+        更新基，依次进行下去，直到验证完所有的点。
+        这里比较重要的是两个超参数，一个是初始基的势，一个是阈值
+        :param x_data: 数据集
+        :param y_data: 数据集的标签，默认为'n'
+        :return: 基
+        """
+        np.random.seed(self.random_state)
+        np.random.shuffle(x_data)
+        x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, train_size=6 / len(x_data),
+                                                            random_state=self.random_state)
+        # print("总的势：", len(x_data))
+        for i in range(len(x_test)):
+            distance = self._bottleneck(self._diagram(x_train), self._diagram(np.vstack((x_train, x_test[i]))))
+            if distance > self.threshold:
+                x_train = np.vstack((x_train, x_test[i]))
+        # print("基的势：", len(x_train))
+        self.shape_data = x_train
+        self.shape = self._diagram(x_train)
+        return self.shape_data, self.shape
+
+    def predict(self, x_test):  # compute -1 and 1 respectively for outlier point and internal point
         """
         compute -1 and 1 respectively for novelty sample and normal sample
-        :param x: the data set for predict
+        :param x_test: the data set for predict
         :return: the predicted label (-1 and 1)
         """
-
-        for i in range(len(x)):
-            point = x[i]
+        self.scores = []
+        for i in range(len(x_test)):
+            point = x_test[i]
             data_novelty = np.vstack((self.shape_data, point))
             diagram_novelty = self._diagram(data_novelty)
             self.scores.append(np.min([self._bottleneck(self.shape, diagram_novelty), 99]))
-        self.scores = np.array(self.scores)
+        scores = np.array(self.scores)
         # y_scores = copy.deepcopy(self.scores)  # backup scores value for function score_samples()
         # max_score = np.max(y_scores) + 1
         # scores = y_scores / max_score
         # T = self.threshold / max_score
         # scores[scores >= T] = 1  # big distance convert to 1
         # scores[scores < T] = -1  # small distance convert to -1
-        binarizer = preprocessing.Binarizer(threshold=self.threshold)  # convert to 0 or 1
-        scores = binarizer.transform([self.scores])
+        binary = preprocessing.Binarizer(threshold=self.threshold)  # convert to 0 or 1
+        scores = binary.transform([scores])
         predict = [1 - 2 * x for x in scores.tolist()[0]]  # convert 0 or 1 to 1 or -1
-        # y_scores = scores.astype(int)
         predict = [int(i) for i in predict]
-        return predict  # outlier point label -1 and inlier point label 1
+        return predict  # outlier point label -1 and internal point label 1
 
-    def score_samples(self, x):
+    def score_samples(self, x_test):
         # self.predict(x)
         return self.scores
 
-    def OX_fit(self, X, output_path='.'):
-        '''
-        param x_train: the train set
-        param output_path: save the base shape dataset B to output path
-        '''
-        self.data = X
-        data = pd.DataFrame(data=X)
-        base_list = list(data.index)
-        abandom_point = []
-
-        if self.base > len(data):
-            print("the base shape data set is too small")
-        else:
-            try:  # for tqdm print time consume
-                with tqdm(np.arange(len(data.index))) as t:
-                    for i in t:
-                        choice_index = i
-                        choice_point = np.array(data.iloc[choice_index, :])
-                        temp_list = copy.deepcopy(base_list)
-                        base_list.remove(choice_index)
-                        self.data = np.array(data.iloc[base_list, :])
-                        if len(self.data) < self.base:
-                            break
-                        else:
-                            if self._bottleneck(choice_point) < self.threshold:
-                                base_list = copy.deepcopy(temp_list)
-                            else:
-                                abandom_point.append(choice_index)
-                                continue
-            except KeyboardInterrupt:
-                t.close()
-                raise
-
-            t.close()
-
-            B = data.iloc[base_list, :]
-            self.data = np.array(B)  # the model is being fitted by train set
-            B.to_csv(output_path + ".csv")
-            print("self data shape: ", data.shape[0])
-            print("B data shape: ", B.shape)
-            with open(output_path + ".txt", 'w') as f:  # write abandom point to file
-                for item in abandom_point:
-                    f.write("%s\n" % item)
+    # def OX_fit(self, X, output_path='.'):
+    #     '''
+    #     param x_train: the train set
+    #     param output_path: save the base shape dataset B to output path
+    #     '''
+    #     self.data = X
+    #     data = pd.DataFrame(data=X)
+    #     base_list = list(data.index)
+    #     abandom_point = []
+    #
+    #     if self.base > len(data):
+    #         print("the base shape data set is too small")
+    #     else:
+    #         try:
+    #             with tqdm(np.arange(len(data.index))) as t:
+    #                 for i in t:
+    #                     choice_index = i
+    #                     choice_point = np.array(data.iloc[choice_index, :])
+    #                     temp_list = copy.deepcopy(base_list)
+    #                     base_list.remove(choice_index)
+    #                     self.data = np.array(data.iloc[base_list, :])
+    #                     if len(self.data) < self.base:
+    #                         break
+    #                     else:
+    #                         if self._bottleneck(choice_point) < self.threshold:
+    #                             base_list = copy.deepcopy(temp_list)
+    #                         else:
+    #                             abandom_point.append(choice_index)
+    #                             continue
+    #         except KeyboardInterrupt:
+    #             t.close()
+    #             raise
+    #
+    #         t.close()
+    #
+    #         B = data.iloc[base_list, :]
+    #         self.data = np.array(B)  # the model is being fitted by train set
+    #         B.to_csv(output_path + ".csv")
+    #         print("self data shape: ", data.shape[0])
+    #         print("B data shape: ", B.shape)
+    #         with open(output_path + ".txt", 'w') as f:  # write abandom point to file
+    #             for item in abandom_point:
+    #                 f.write("%s\n" % item)

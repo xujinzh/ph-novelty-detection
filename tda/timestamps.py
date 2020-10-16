@@ -2,7 +2,7 @@
 import time
 
 
-def displaytime(func):
+def display_time(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
         result = func(*args, **kwargs)
