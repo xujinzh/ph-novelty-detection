@@ -12,8 +12,9 @@ from tda import run
 def main():
     # 读取数据
     data_path = "./data/breast-cancer-unsupervised-ad.csv"
-
     # data_path = "./data/satellite-unsupervised-ad.csv"
+    # data_path = "./data/pen-global-unsupervised-ad.csv"
+    # data_path = './data/annthyroid-unsupervised-ad.csv'
     run.just_do_it(path=data_path)
 
 

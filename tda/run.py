@@ -18,6 +18,7 @@ from sklearn.utils.multiclass import type_of_target
 from sklearn.metrics import roc_auc_score
 import random
 from tda.model import multi_model
+import matplotlib.pyplot as plt
 
 
 def just_do_it(path):
@@ -36,10 +37,13 @@ def just_do_it(path):
     normals = np.array(normal_data.iloc[:, :-1])
     normal_labels = np.array(normal_data.iloc[:, -1])
 
-    for outer_train_size in np.arange(0.88, 1, 0.01):
+    auc = []
+
+    for outer_train_size in np.arange(0.88, 0.99, 0.01):
         outer_train_size = round(outer_train_size, 2)
         # 划分正常样本为测试集和其他（用于再次划分为训练集和验证集）
-        x, x_test, y, y_test = train_test_split(normals, normal_labels, train_size=outer_train_size, random_state=3)
+        svm_score, x_test, lof_score, y_test = train_test_split(normals, normal_labels, train_size=outer_train_size,
+                                                                random_state=3)
 
         # 将测试集中添加异常点，称为真正的测试集
         x_test = np.vstack((outliers, x_test))
@@ -48,13 +52,25 @@ def just_do_it(path):
         # 把y_test中满足条件 y_test == 'o'的输出为-1，其他输出为1。最后，转化为list，方便计算roc
         y_test = list(np.where(y_test == 'o', -1, 1))
 
-        for train_size in np.arange(0.88, 1, 0.01):
+        for train_size in np.arange(0.88, 0.99, 0.01):
             train_size = round(train_size, 2)
             # 划分其他为训练集和验证集
-            x_train, x_cv, y_train, y_cv = train_test_split(x, y, train_size=train_size, random_state=3)
+            x_train, x_cv, y_train, y_cv = train_test_split(svm_score, lof_score, train_size=train_size, random_state=3)
 
-            # print('-' * 30)
-            # print("outer train size:", outer_train_size)
-            # print("train size:", train_size)
-            multi_model(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, threshold=0.5)
-            # print('-' * 30)
+            auc_score = multi_model(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, threshold=0.5)
+            auc.append(auc_score)
+
+    svm_score = []
+    lof_score = []
+    ph_score = []
+    for score in auc:
+        svm_score.append(score[0])
+        lof_score.append(score[1])
+        ph_score.append(score[2])
+
+    x = np.linspace(0, 1, len(ph_score))
+    svm_plot, = plt.plot(x, svm_score, 'ro')
+    lof_plot, = plt.plot(x, lof_score, 'b+')
+    ph_plot, = plt.plot(x, ph_score, 'g^')
+    plt.legend([svm_plot, lof_plot, ph_plot], ['svm', 'lof', 'ph'])
+    plt.show()

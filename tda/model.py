@@ -20,7 +20,8 @@ def multi_model(x_train, y_train, x_test, y_test, max_dimension=2, ratio=0.3, st
                        standard_deviation_coefficient=standard_deviation_coefficient, shuffle=shuffle,
                        max_edge_length=max_edge_length, cross_separation=cross_separation,
                        random_state=random_state, threshold=threshold)
-    clf.grow_fit(x_train, y_train)
+    # clf.grow_fit(x_train, y_train)
+    clf.cluster_fit(x_train, y_train, cluster='kmeans', n_cluster=20, branching_factor=20, threshold=0.8)
 
     # 预测结果标签
     ph_predicted = clf.predict(x_test)
@@ -51,13 +52,15 @@ def multi_model(x_train, y_train, x_test, y_test, max_dimension=2, ratio=0.3, st
 
     auc_svm = roc.area(y_test=y_test, y_scores=y_scores, pos_label=1, title='OC-SVM - ', plot_roc=False)
 
-    if auc_ph == 1.0:
-        print('*' * 60)
-        print("auc of ph: %.3f" % auc_ph)
-        print("auc of lof:%.3f" % auc_lof)
-        print("auc of svm:%.3f" % auc_svm)
-        print('*' * 60)
+    # if auc_ph == 1.0:
+    #     print('*' * 60)
+    #     print("auc of ph: %.3f" % auc_ph)
+    #     print("auc of lof:%.3f" % auc_lof)
+    #     print("auc of svm:%.3f" % auc_svm)
+    #     print('*' * 60)
 
+    # print('=' * 60)
     # print("auc of ph: %.3f" % auc_ph)
     # print("auc of lof:%.3f" % auc_lof)
     # print("auc of svm:%.3f" % auc_svm)
+    return auc_svm, auc_lof, auc_ph

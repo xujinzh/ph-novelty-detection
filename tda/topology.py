@@ -13,6 +13,7 @@ import warnings
 import collections
 import operator
 import random
+from sklearn.cluster import Birch, KMeans
 
 __all__ = ["PHNovDet"]
 __author__ = "Jinzhong Xu"
@@ -275,7 +276,7 @@ class PHNovDet(object):
     def grow_fit(self, x_data=None, y_data=None):
         """
         增长模式获得拓扑骨架数据集。
-        随机从数据集中选取5个点作为基，把其他点作为待验证点，如果其他点的加入改变了基数据集的拓扑形状，则认为该点是拓扑骨架数据集的一部分
+        随机从数据集中选取 5个点作为基，把其他点作为待验证点，如果其他点的加入改变了基数据集的拓扑形状，则认为该点是拓扑骨架数据集的一部分
         更新基，依次进行下去，直到验证完所有的点。
         这里比较重要的是两个超参数，一个是初始基的势，一个是阈值
         :param x_data: 数据集
@@ -286,14 +287,39 @@ class PHNovDet(object):
         np.random.shuffle(x_data)
         x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, train_size=6 / len(x_data),
                                                             random_state=self.random_state)
-        # print("总的势：", len(x_data))
+        print("总的势：", len(x_data))
         for i in range(len(x_test)):
             distance = self._bottleneck(self._diagram(x_train), self._diagram(np.vstack((x_train, x_test[i]))))
             if distance > self.threshold:
                 x_train = np.vstack((x_train, x_test[i]))
-        # print("基的势：", len(x_train))
+        print("基的势：", len(x_train))
         self.shape_data = x_train
         self.shape = self._diagram(x_train)
+        return self.shape_data, self.shape
+
+    def cluster_fit(self, x_data=None, y_data=None, cluster='kmeans', n_cluster=20, branching_factor=100,
+                    threshold=1.0):
+        np.random.seed(self.random_state)
+        np.random.shuffle(x_data)
+        centroids = np.array([])
+        if cluster == 'birch':
+            model = Birch(n_clusters=n_cluster, branching_factor=branching_factor, threshold=threshold)
+            results = model.fit(x_data)
+            labels = results.labels_
+            unique_labels = np.unique(labels)
+            for i, label in zip(range(len(unique_labels)), unique_labels):
+                if i == 0:
+                    centroids = np.mean(x_data[labels == label], axis=0)
+                else:
+                    new_center = np.mean(x_data[labels == label], axis=0)
+                    centroids = np.vstack([centroids, new_center])
+        elif cluster == 'kmeans':
+            model = KMeans(n_clusters=n_cluster)
+            results = model.fit(x_data)
+            centroids = results.cluster_centers_
+
+        self.shape_data = centroids
+        self.shape = self._diagram(centroids)
         return self.shape_data, self.shape
 
     def predict(self, x_test):  # compute -1 and 1 respectively for outlier point and internal point
