@@ -74,7 +74,7 @@ class PHNovDet(object):
 
     References
     ----------
-    .. [1] Jinzhong Xu, Lele Xu, Ye Li, Lili Guo.
+    .. [1] Jinzhong Xu, Junrong Du, Ye Li, Lele Xu, Lili Guo, Xuzhi Li.
         Novelty Detection with Topological Signatures.
     """
 
