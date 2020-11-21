@@ -21,7 +21,17 @@ def multi_model(x_train, y_train, x_test, y_test, max_dimension=2, ratio=0.3, st
                        max_edge_length=max_edge_length, cross_separation=cross_separation,
                        random_state=random_state, threshold=threshold)
     # clf.grow_fit(x_train, y_train)
-    clf.cluster_fit(x_train, y_train, cluster='kmeans', n_cluster=20, branching_factor=20, threshold=0.8)
+    # clusters = [['birch', 'n_cluster', 'branching_factor', 'threshold'], ['kmeans', 'n_cluster'],
+    #             ['dbscan', 'eps', 'min_samples']]
+
+    cluster = 'dbscan'
+    n_cluster = 20
+    branching_factor = 20
+    threshold = 0.8
+    eps = 15
+    min_samples = 4
+    clf.cluster_fit(x_train, y_train, cluster=cluster, n_cluster=n_cluster, branching_factor=branching_factor,
+                    threshold=threshold, eps=eps, min_samples=min_samples)
 
     # 预测结果标签
     ph_predicted = clf.predict(x_test)
@@ -59,8 +69,8 @@ def multi_model(x_train, y_train, x_test, y_test, max_dimension=2, ratio=0.3, st
     #     print("auc of svm:%.3f" % auc_svm)
     #     print('*' * 60)
 
-    # print('=' * 60)
-    # print("auc of ph: %.3f" % auc_ph)
-    # print("auc of lof:%.3f" % auc_lof)
-    # print("auc of svm:%.3f" % auc_svm)
-    return auc_svm, auc_lof, auc_ph
+    print('=' * 60)
+    print("auc of ph: %.3f" % auc_ph)
+    print("auc of lof:%.3f" % auc_lof)
+    print("auc of svm:%.3f" % auc_svm)
+    return auc_svm, auc_lof, auc_ph, cluster, n_cluster, branching_factor, threshold, eps, min_samples

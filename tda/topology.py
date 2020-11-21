@@ -13,7 +13,7 @@ import warnings
 import collections
 import operator
 import random
-from sklearn.cluster import Birch, KMeans
+from sklearn.cluster import Birch, KMeans, DBSCAN
 
 __all__ = ["PHNovDet"]
 __author__ = "Jinzhong Xu"
@@ -298,25 +298,30 @@ class PHNovDet(object):
         return self.shape_data, self.shape
 
     def cluster_fit(self, x_data=None, y_data=None, cluster='kmeans', n_cluster=20, branching_factor=100,
-                    threshold=1.0):
+                    threshold=1.0, eps=3, min_samples=3):
         np.random.seed(self.random_state)
         np.random.shuffle(x_data)
         centroids = np.array([])
-        if cluster == 'birch':
+
+        if cluster == 'kmeans':
+            clustering = KMeans(n_clusters=n_cluster).fit(x_data)
+            centroids = clustering.cluster_centers_
+
+        elif cluster in ['birch', 'dbscan']:
             model = Birch(n_clusters=n_cluster, branching_factor=branching_factor, threshold=threshold)
-            results = model.fit(x_data)
-            labels = results.labels_
+            if cluster == 'dbscan':
+                model = DBSCAN(eps=eps, min_samples=min_samples)
+            clustering = model.fit(x_data)
+            labels = clustering.labels_
             unique_labels = np.unique(labels)
+            assert len(unique_labels) > 1, "聚类数小于2，请调整DBSCAN模型的半径（eps）和最小样本点（min_samples）的取值，" \
+                                           "以匹配数据集聚类"
             for i, label in zip(range(len(unique_labels)), unique_labels):
                 if i == 0:
                     centroids = np.mean(x_data[labels == label], axis=0)
                 else:
                     new_center = np.mean(x_data[labels == label], axis=0)
                     centroids = np.vstack([centroids, new_center])
-        elif cluster == 'kmeans':
-            model = KMeans(n_clusters=n_cluster)
-            results = model.fit(x_data)
-            centroids = results.cluster_centers_
 
         self.shape_data = centroids
         self.shape = self._diagram(centroids)
