@@ -21,7 +21,7 @@ from tda.model import multi_model
 import matplotlib.pyplot as plt
 
 
-def just_do_it(path):
+def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, branching_factor=20, cluster_threshold=0.8):
     # 读取数据
     data = pd.read_csv(path, header=None)
 
@@ -39,7 +39,7 @@ def just_do_it(path):
 
     auc = []
 
-    for outer_train_size in np.arange(0.8, 0.99, 0.01):
+    for outer_train_size in np.arange(0.85, 0.95, 0.01):
         outer_train_size = round(outer_train_size, 2)
         # 划分正常样本为测试集和其他（用于再次划分为训练集和验证集）
         svm_score, x_test, lof_score, y_test = train_test_split(normals, normal_labels, train_size=outer_train_size,
@@ -52,12 +52,14 @@ def just_do_it(path):
         # 把y_test中满足条件 y_test == 'o'的输出为-1，其他输出为1。最后，转化为list，方便计算roc
         y_test = list(np.where(y_test == 'o', -1, 1))
 
-        for train_size in np.arange(0.8, 0.99, 0.01):
+        for train_size in np.arange(0.85, 0.95, 0.01):
             train_size = round(train_size, 2)
             # 划分其他为训练集和验证集
             x_train, x_cv, y_train, y_cv = train_test_split(svm_score, lof_score, train_size=train_size, random_state=3)
 
-            auc_score = multi_model(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, threshold=0.5)
+            auc_score = multi_model(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, threshold=0.5,
+                                    cluster=cluster, n_cluster=n_cluster, eps=eps, min_samples=min_samples,
+                                    branching_factor=branching_factor, cluster_threshold=cluster_threshold)
             auc.append(auc_score)
 
     svm_score = []
@@ -68,26 +70,34 @@ def just_do_it(path):
         lof_score.append(score[1])
         ph_score.append(score[2])
 
-    x = np.linspace(0, 1, len(ph_score))
-    svm_plot, = plt.plot(x, svm_score, 'ro')
-    lof_plot, = plt.plot(x, lof_score, 'g+')
-    ph_plot, = plt.plot(x, ph_score, 'b^')
-    plt.legend([svm_plot, lof_plot, ph_plot], ['svm', 'lof', 'ph'])
+    mean_svm = np.mean(svm_score)
+    mean_lof = np.mean(lof_score)
+    mean_ph = np.mean(ph_score)
 
-    cluster = auc[0][3]
-    n_cluster = auc[0][4]
-    branching_factor = auc[0][5]
-    threshold = auc[0][6]
-    eps = auc[0][7]
-    min_samples = auc[0][8]
+    if mean_ph > 0.85:
 
-    if cluster == 'birch':
-        plt.title(
-            "cluster={0}, n_clusters={1}, branching_factor={2}, threshold={3}".format(cluster, n_cluster,
-                                                                                      branching_factor,
-                                                                                      threshold))
-    elif cluster == 'kmeans':
-        plt.title("cluster={0}, n_clusters={1}".format(cluster, n_cluster))
-    elif cluster == 'dbscan':
-        plt.title("cluster={0}, eps={1}, min_samples={2}".format(cluster, eps, min_samples))
-    plt.show()
+        x = np.linspace(0, 1, len(ph_score))
+        svm_plot, = plt.plot(x, svm_score, 'ro')
+        lof_plot, = plt.plot(x, lof_score, 'g+')
+        ph_plot, = plt.plot(x, ph_score, 'b^')
+        plt.legend([svm_plot, lof_plot, ph_plot], ['svm', 'lof', 'ph'])
+
+        cluster = auc[0][3]
+        n_cluster = auc[0][4]
+        branching_factor = auc[0][5]
+        threshold = auc[0][6]
+        eps = auc[0][7]
+        min_samples = auc[0][8]
+
+        if cluster == 'birch':
+            plt.title(
+                "cluster={0}, n_clusters={1}, branching_factor={2}, threshold={3}".format(cluster, n_cluster,
+                                                                                          branching_factor,
+                                                                                          threshold))
+        elif cluster in ['kmeans', 'hierarchical', 'spectral']:
+            plt.title("cluster={0}, n_clusters={1}".format(cluster, n_cluster))
+        elif cluster == 'dbscan':
+            plt.title("cluster={0}, eps={1}, min_samples={2}".format(cluster, eps, min_samples))
+        elif cluster == 'optics':
+            plt.title("cluster={0}, eps={1}, min_samples={2}".format(cluster, eps, min_samples))
+        plt.show()

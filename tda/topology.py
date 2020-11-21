@@ -13,7 +13,7 @@ import warnings
 import collections
 import operator
 import random
-from sklearn.cluster import Birch, KMeans, DBSCAN
+from sklearn.cluster import Birch, KMeans, DBSCAN, OPTICS, AgglomerativeClustering, SpectralClustering
 
 __all__ = ["PHNovDet"]
 __author__ = "Jinzhong Xu"
@@ -307,15 +307,24 @@ class PHNovDet(object):
             clustering = KMeans(n_clusters=n_cluster).fit(x_data)
             centroids = clustering.cluster_centers_
 
-        elif cluster in ['birch', 'dbscan']:
+        elif cluster in ['birch', 'dbscan', 'optics', 'hierarchical', 'spectral']:
             model = Birch(n_clusters=n_cluster, branching_factor=branching_factor, threshold=threshold)
             if cluster == 'dbscan':
                 model = DBSCAN(eps=eps, min_samples=min_samples)
+            elif cluster == 'optics':
+                model = OPTICS(eps=eps, min_samples=min_samples)
+            elif cluster == 'hierarchical':
+                model = AgglomerativeClustering(n_clusters=n_cluster)
+            elif cluster == 'spectral':
+                model = SpectralClustering(n_clusters=n_cluster, assign_labels="discretize", eigen_solver='arpack',
+                                           affinity="nearest_neighbors")
             clustering = model.fit(x_data)
             labels = clustering.labels_
             unique_labels = np.unique(labels)
-            assert len(unique_labels) > 1, "聚类数小于2，请调整DBSCAN模型的半径（eps）和最小样本点（min_samples）的取值，" \
-                                           "以匹配数据集聚类"
+            # assert len(unique_labels) >= 4, "聚类数小于等于4，请调整DBSCAN模型的半径（eps）和最小样本点（min_samples）的取值，" \
+            #                                 "以匹配数据集聚类"
+            if len(unique_labels) <= 4:
+                return 0
             for i, label in zip(range(len(unique_labels)), unique_labels):
                 if i == 0:
                     centroids = np.mean(x_data[labels == label], axis=0)
