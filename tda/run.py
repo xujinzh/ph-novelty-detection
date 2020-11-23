@@ -19,9 +19,11 @@ from sklearn.metrics import roc_auc_score
 import random
 from tda.model import multi_model
 import matplotlib.pyplot as plt
+import os
 
 
 def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, branching_factor=20, cluster_threshold=0.8):
+    file_name = os.path.split(path)[1]
     # 读取数据
     data = pd.read_csv(path, header=None)
 
@@ -74,7 +76,7 @@ def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, bran
     mean_lof = np.mean(lof_score)
     mean_ph = np.mean(ph_score)
 
-    if mean_ph > 0.85:
+    if mean_ph > 0.9 and mean_ph > mean_lof and mean_ph > mean_svm:
 
         x = np.linspace(0, 1, len(ph_score))
         svm_plot, = plt.plot(x, svm_score, 'ro')
@@ -100,4 +102,9 @@ def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, bran
             plt.title("cluster={0}, eps={1}, min_samples={2}".format(cluster, eps, min_samples))
         elif cluster == 'optics':
             plt.title("cluster={0}, eps={1}, min_samples={2}".format(cluster, eps, min_samples))
-        plt.show()
+        plt.savefig(
+            "./output/data={0}-cluster={1}-n_clusters={2}-branching_factor={3}-threshold={4}.png".format(
+                file_name.split('-')[0], cluster, n_cluster,
+                branching_factor,
+                threshold))
+        plt.close()

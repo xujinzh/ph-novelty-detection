@@ -12,29 +12,29 @@ import numpy as np
 
 def main(cluster):
     # 读取数据
-    # data_path = './data/aloi-unsupervised-ad.csv'
-    data_path = "./data/breast-cancer-unsupervised-ad.csv"
-    # data_path = "./data/satellite-unsupervised-ad.csv"
-    # data_path = "./data/pen-global-unsupervised-ad.csv"
-    # data_path = './data/annthyroid-unsupervised-ad.csv'
+    data_paths = ['./data/breast-cancer-unsupervised-ad.csv', './data/letter-unsupervised-ad.csv',
+                  './data/pen-global-unsupervised-ad.csv', './data/annthyroid-unsupervised-ad.csv',
+                  './data/satellite-unsupervised-ad.csv']
 
-    if cluster == 'spectral' or cluster == 'hierarchical' or cluster == 'kmeans':
-        for n_cluster in range(10, 30):
-            run.just_do_it(path=data_path, cluster=cluster, n_cluster=n_cluster)
-    elif cluster == 'dbscan' or cluster == 'optics':
-        for eps in range(5, 25):
-            for min_samples in range(3, 7):
-                run.just_do_it(path=data_path, cluster=cluster, eps=eps, min_samples=min_samples)
-    elif cluster == 'birch':
-        #  'n_cluster', 'branching_factor', 'threshold'
-        for n_cluster in range(10, 30):
-            for branching_factor in range(5, 25):
-                for cluster_threshold in np.arange(0.5, 1.0, 0.1):
-                    run.just_do_it(path=data_path, cluster=cluster, n_cluster=n_cluster,
-                                   branching_factor=branching_factor, cluster_threshold=cluster_threshold)
+    for data_path in data_paths:
+        if cluster == 'spectral' or cluster == 'hierarchical' or cluster == 'kmeans':
+            for n_cluster in range(10, 30):
+                run.just_do_it(path=data_path, cluster=cluster, n_cluster=n_cluster)
+        elif cluster == 'dbscan' or cluster == 'optics':
+            for eps in range(5, 25):
+                for min_samples in range(3, 7):
+                    run.just_do_it(path=data_path, cluster=cluster, eps=eps, min_samples=min_samples)
+        elif cluster == 'birch':
+            #  'n_cluster', 'branching_factor', 'threshold'
+            for n_cluster in range(10, 30):
+                for branching_factor in range(5, 25):
+                    for cluster_threshold in np.arange(0.5, 1.0, 0.1):
+                        run.just_do_it(path=data_path, cluster=cluster, n_cluster=n_cluster,
+                                       branching_factor=branching_factor, cluster_threshold=cluster_threshold)
 
 
 if __name__ == '__main__':
     clusters = ['spectral', 'hierarchical', 'kmeans', 'dbscan', 'optics', 'birch']
     for cluster in clusters:
+        print("使用聚类方法 {0} 进行处理...".format(cluster))
         main(cluster=cluster)
