@@ -8,6 +8,7 @@
 
 from tda import run
 import numpy as np
+import os
 
 
 def main(cluster):
@@ -17,16 +18,22 @@ def main(cluster):
                   './data/satellite-unsupervised-ad.csv']
 
     for data_path in data_paths:
+        file_name = os.path.split(data_path)[1]
+        print("\t正在处理数据集 {} ...".format(file_name.split('-')[0]))
         if cluster == 'spectral' or cluster == 'hierarchical' or cluster == 'kmeans':
-            for n_cluster in range(10, 30):
+            for n_cluster in range(8, 130):
                 run.just_do_it(path=data_path, cluster=cluster, n_cluster=n_cluster)
+        elif cluster == 'hierarchical':
+            for n_cluster in range(8, 130):
+                for linkage in ['ward', 'complete', 'average', 'single']:
+                    run.just_do_it(path=data_path, cluster=cluster, linkage=linkage)
         elif cluster == 'dbscan' or cluster == 'optics':
             for eps in range(5, 25):
-                for min_samples in range(3, 7):
+                for min_samples in range(3, 10):
                     run.just_do_it(path=data_path, cluster=cluster, eps=eps, min_samples=min_samples)
         elif cluster == 'birch':
             #  'n_cluster', 'branching_factor', 'threshold'
-            for n_cluster in range(10, 30):
+            for n_cluster in range(8, 130):
                 for branching_factor in range(5, 25):
                     for cluster_threshold in np.arange(0.5, 1.0, 0.1):
                         run.just_do_it(path=data_path, cluster=cluster, n_cluster=n_cluster,

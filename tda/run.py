@@ -22,7 +22,8 @@ import matplotlib.pyplot as plt
 import os
 
 
-def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, branching_factor=20, cluster_threshold=0.8):
+def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, branching_factor=20, cluster_threshold=0.8,
+               linkage='ward'):
     file_name = os.path.split(path)[1]
     # 读取数据
     data = pd.read_csv(path, header=None)
@@ -61,7 +62,8 @@ def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, bran
 
             auc_score = multi_model(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, threshold=0.5,
                                     cluster=cluster, n_cluster=n_cluster, eps=eps, min_samples=min_samples,
-                                    branching_factor=branching_factor, cluster_threshold=cluster_threshold)
+                                    branching_factor=branching_factor, cluster_threshold=cluster_threshold,
+                                    linkage=linkage)
             auc.append(auc_score)
 
     svm_score = []

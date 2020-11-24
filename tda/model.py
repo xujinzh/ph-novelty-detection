@@ -14,7 +14,8 @@ from sklearn.svm import OneClassSVM
 
 def multi_model(x_train, y_train, x_test, y_test, max_dimension=2, ratio=0.3, standard_deviation_coefficient=3,
                 shuffle=False, max_edge_length=6, cross_separation=3, random_state=3, threshold=0.45,
-                cluster='spectral', n_cluster=25, eps=15, min_samples=4, branching_factor=20, cluster_threshold=0.8):
+                cluster='spectral', n_cluster=25, eps=15, min_samples=4, branching_factor=20, cluster_threshold=0.8,
+                linkage='ward'):
     # lof novelty detection
     clf = LocalOutlierFactor(novelty=True, n_neighbors=9)
 
@@ -56,7 +57,7 @@ def multi_model(x_train, y_train, x_test, y_test, max_dimension=2, ratio=0.3, st
     # min_samples = 4
 
     result = clf.cluster_fit(x_train, y_train, cluster=cluster, n_cluster=n_cluster, branching_factor=branching_factor,
-                             threshold=cluster_threshold, eps=eps, min_samples=min_samples)
+                             threshold=cluster_threshold, eps=eps, min_samples=min_samples, linkage=linkage)
 
     if result == 0:
         return auc_svm, auc_lof, 0.5, cluster, n_cluster, branching_factor, threshold, eps, min_samples

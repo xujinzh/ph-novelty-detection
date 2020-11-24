@@ -298,7 +298,7 @@ class PHNovDet(object):
         return self.shape_data, self.shape
 
     def cluster_fit(self, x_data=None, y_data=None, cluster='kmeans', n_cluster=20, branching_factor=100,
-                    threshold=1.0, eps=3, min_samples=3):
+                    threshold=1.0, eps=3, min_samples=3, linkage='ward'):
         np.random.seed(self.random_state)
         np.random.shuffle(x_data)
         centroids = np.array([])
@@ -314,7 +314,7 @@ class PHNovDet(object):
             elif cluster == 'optics':
                 model = OPTICS(eps=eps, min_samples=min_samples)
             elif cluster == 'hierarchical':
-                model = AgglomerativeClustering(n_clusters=n_cluster)
+                model = AgglomerativeClustering(n_clusters=n_cluster, linkage=linkage)
             elif cluster == 'spectral':
                 model = SpectralClustering(n_clusters=n_cluster, assign_labels="discretize", eigen_solver='arpack',
                                            affinity="nearest_neighbors")
