@@ -317,7 +317,7 @@ class PHNovDet(object):
                 model = AgglomerativeClustering(n_clusters=n_cluster, linkage=linkage)
             elif cluster == 'spectral':
                 model = SpectralClustering(n_clusters=n_cluster, assign_labels="discretize", eigen_solver='arpack',
-                                           affinity="nearest_neighbors")
+                                           affinity="nearest_neighbors", random_state=self.random_state)
             clustering = model.fit(x_data)
             labels = clustering.labels_
             unique_labels = np.unique(labels)
