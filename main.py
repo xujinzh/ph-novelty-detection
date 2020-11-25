@@ -9,8 +9,10 @@
 from tda import run
 import numpy as np
 import os
+from tda.timestamps import display_time
 
 
+@display_time
 def main(cluster):
     # 读取数据
     data_paths = ['./data/breast-cancer-unsupervised-ad.csv', './data/letter-unsupervised-ad.csv',
@@ -38,10 +40,13 @@ def main(cluster):
                     for cluster_threshold in np.arange(0.5, 1.0, 0.1):
                         run.just_do_it(path=data_path, cluster=cluster, n_cluster=n_cluster,
                                        branching_factor=branching_factor, cluster_threshold=cluster_threshold)
+        print("\t完成数据集 {} 的处理工作 ^_^".format(file_name.split('-')[0]))
 
 
 if __name__ == '__main__':
     clusters = ['spectral', 'hierarchical', 'kmeans', 'dbscan', 'optics', 'birch']
     for cluster in clusters:
-        print("使用聚类方法 {0} 进行处理...".format(cluster))
+        print("使用聚类方法 {0} 进行处理 ...".format(cluster))
         main(cluster=cluster)
+        print("\t聚类方法 {0} 处理结束 ^_^".format(cluster))
+    print("整个任务完成！")

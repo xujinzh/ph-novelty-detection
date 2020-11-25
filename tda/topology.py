@@ -304,7 +304,7 @@ class PHNovDet(object):
         centroids = np.array([])
 
         if cluster == 'kmeans':
-            clustering = KMeans(n_clusters=n_cluster).fit(x_data)
+            clustering = KMeans(n_clusters=n_cluster, random_state=self.random_state).fit(x_data)
             centroids = clustering.cluster_centers_
 
         elif cluster in ['birch', 'dbscan', 'optics', 'hierarchical', 'spectral']:
