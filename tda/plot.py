@@ -52,7 +52,7 @@ def draw(auc_classical, auc_ph, file_name):
         plt.savefig(
             "./output/data={0}-cluster={1}-n_clusters={2}-linkage={3}.png".format(data_name, cluster,
                                                                                   n_cluster, linkage))
-    elif cluster == ['dbscan', 'optics']:
+    elif cluster in ['dbscan', 'optics']:
         cluster, eps, min_samples = auc_ph[0][0]
         plt.title("cluster={0}, eps={1}, min_samples={2}".format(cluster, eps, min_samples))
         plt.savefig(
