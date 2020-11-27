@@ -31,33 +31,8 @@ def draw(auc_classical, auc_ph, file_name):
     (ph_plot,) = plt.plot(x, ph_scores, "b^")
     plt.legend([svm_plot, lof_plot, ph_plot], ["svm", "lof", "ph"])
 
-    # 画图显示
-    if cluster == 'birch':
-        cluster, n_cluster, branching_factor, cluster_threshold = auc_ph[0][0]
-        plt.title(
-            "cluster={0}, n_clusters={1}, branching_factor={2}, cluster_threshold={3}".format(cluster, n_cluster,
-                                                                                              branching_factor,
-                                                                                              cluster_threshold))
-        plt.savefig(
-            "./output/data={0}-cluster={1}-n_clusters={2}-branching_factor={3}-cluster_threshold={4}.png".format(
-                data_name, cluster, n_cluster, branching_factor, cluster_threshold))
-    elif cluster in ['kmeans', 'tomato', 'spectral']:
-        cluster, n_cluster = auc_ph[0][0]
-        plt.title("cluster={0}, n_clusters={1}".format(cluster, n_cluster))
-        plt.savefig(
-            "./output/data={0}-cluster={1}-n_clusters={2}.png".format(data_name, cluster, n_cluster))
-    elif cluster == 'hierarchical':
-        cluster, n_cluster, linkage = auc_ph[0][0]
-        plt.title("cluster={0}, n_clusters={1}, linkage={2}".format(cluster, n_cluster, linkage))
-        plt.savefig(
-            "./output/data={0}-cluster={1}-n_clusters={2}-linkage={3}.png".format(data_name, cluster,
-                                                                                  n_cluster, linkage))
-    elif cluster in ['dbscan', 'optics']:
-        cluster, eps, min_samples = auc_ph[0][0]
-        plt.title("cluster={0}, eps={1}, min_samples={2}".format(cluster, eps, min_samples))
-        plt.savefig(
-            "./output/data={0}-cluster={1}-eps={2}-min_samples={3}.png".format(data_name, cluster,
-                                                                               eps, min_samples))
+    plt.title("cluster={0}, data={1}".format(cluster, data_name))
+    plt.savefig("./output/data={0}-cluster={1}.png".format(data_name, cluster))
     plt.close()
 
     # 把结果保存到文件
