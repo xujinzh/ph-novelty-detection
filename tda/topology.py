@@ -14,6 +14,7 @@ import collections
 import operator
 import random
 from sklearn.cluster import Birch, KMeans, DBSCAN, OPTICS, AgglomerativeClustering, SpectralClustering
+from gudhi.clustering.tomato import Tomato
 
 __all__ = ["PHNovDet"]
 __author__ = "Jinzhong Xu"
@@ -117,18 +118,29 @@ class PHNovDet(object):
         :param points: point cloud
         :return: persistent diagram
         """
+        # alpha complex
         points = preprocessing.minmax_scale(points)
-        # minmax_scale(normalization) need less time than scale(standardization)
-        # because max_edge_length is ceil(sqrt{numbers of variables}) in minmax_scale; but that is bigger in scale
-
-        rips_complex = gudhi.RipsComplex(points=points, max_edge_length=self.max_edge_length, sparse=self.sparse)
+        complex = gudhi.AlphaComplex(points=points)
 
         # self.sparse for save time but have different result in every time run
-        simplex_tree = rips_complex.create_simplex_tree(max_dimension=self.max_dimension)
-        diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
-                                           min_persistence=self.min_persistence)
+        simplex_tree = complex.create_simplex_tree()
+        diagram = simplex_tree.persistence()
         return diagram
 
+        # rips complex
+        # points = preprocessing.minmax_scale(points)
+        # # minmax_scale(normalization) need less time than scale(standardization)
+        # # because max_edge_length is ceil(sqrt{numbers of variables}) in minmax_scale; but that is bigger in scale
+        #
+        # rips_complex = gudhi.RipsComplex(points=points, max_edge_length=self.max_edge_length, sparse=self.sparse)
+        #
+        # # self.sparse for save time but have different result in every time run
+        # simplex_tree = rips_complex.create_simplex_tree(max_dimension=self.max_dimension)
+        # diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
+        #                                    min_persistence=self.min_persistence)
+        # return diagram
+
+        # witness complex
         # data = preprocessing.minmax_scale(points)
         # landmarks = gudhi.pick_n_random_points(points=data, nb_points=20)
         # witness_complex = gudhi.EuclideanWitnessComplex(witnesses=data, landmarks=landmarks)
@@ -240,9 +252,7 @@ class PHNovDet(object):
         :return: 训练集的拓扑骨架集合
         """
         data_number = len(x_data)
-        # print("data number:", data_number)
         subset_number = data_number // 20
-        # print("subset number:", subset_number)
         for i in range(subset_number):
             if 1 / (subset_number - i) < 1.0:
                 x_train, x_data, y_train, y_data = train_test_split(x_data, y_data,
@@ -260,10 +270,8 @@ class PHNovDet(object):
                     # print("len of x_train less than 5")
                     break
                 if distance_reduce < self.threshold:
-                    # print("distance reduce less than {0}".format(self.threshold))
                     x_train = np.delete(x_train, index, 0)
                     index -= 1
-                    # print("number of x_train after remove point is:", len(x_train))
                 index += 1
             if self.shape_data is None:
                 self.shape_data = x_train
@@ -287,12 +295,10 @@ class PHNovDet(object):
         np.random.shuffle(x_data)
         x_train, x_test, y_train, y_test = train_test_split(x_data, y_data, train_size=6 / len(x_data),
                                                             random_state=self.random_state)
-        print("总的势：", len(x_data))
         for i in range(len(x_test)):
             distance = self._bottleneck(self._diagram(x_train), self._diagram(np.vstack((x_train, x_test[i]))))
             if distance > self.threshold:
                 x_train = np.vstack((x_train, x_test[i]))
-        print("基的势：", len(x_train))
         self.shape_data = x_train
         self.shape = self._diagram(x_train)
         return self.shape_data, self.shape
@@ -307,10 +313,12 @@ class PHNovDet(object):
             clustering = KMeans(n_clusters=n_cluster, random_state=self.random_state).fit(x_data)
             centroids = clustering.cluster_centers_
 
-        elif cluster in ['birch', 'dbscan', 'optics', 'hierarchical', 'spectral']:
+        elif cluster in ['birch', 'dbscan', 'optics', 'hierarchical', 'spectral', 'tomato']:
             model = Birch(n_clusters=n_cluster, branching_factor=branching_factor, threshold=threshold)
             if cluster == 'dbscan':
                 model = DBSCAN(eps=eps, min_samples=min_samples)
+            elif cluster == 'tomato':
+                model = Tomato(density_type="DTM", n_clusters=n_cluster)
             elif cluster == 'optics':
                 model = OPTICS(eps=eps, min_samples=min_samples)
             elif cluster == 'hierarchical':
@@ -327,9 +335,9 @@ class PHNovDet(object):
                 return 0
             for i, label in zip(range(len(unique_labels)), unique_labels):
                 if i == 0:
-                    centroids = np.mean(x_data[labels == label], axis=0)
+                    centroids = np.median(x_data[labels == label], axis=0)
                 else:
-                    new_center = np.mean(x_data[labels == label], axis=0)
+                    new_center = np.median(x_data[labels == label], axis=0)
                     centroids = np.vstack([centroids, new_center])
 
         self.shape_data = centroids
@@ -349,12 +357,6 @@ class PHNovDet(object):
             diagram_novelty = self._diagram(data_novelty)
             self.scores.append(np.min([self._bottleneck(self.shape, diagram_novelty), 99]))
         scores = np.array(self.scores)
-        # y_scores = copy.deepcopy(self.scores)  # backup scores value for function score_samples()
-        # max_score = np.max(y_scores) + 1
-        # scores = y_scores / max_score
-        # T = self.threshold / max_score
-        # scores[scores >= T] = 1  # big distance convert to 1
-        # scores[scores < T] = -1  # small distance convert to -1
         binary = preprocessing.Binarizer(threshold=self.threshold)  # convert to 0 or 1
         scores = binary.transform([scores])
         predict = [1 - 2 * x for x in scores.tolist()[0]]  # convert 0 or 1 to 1 or -1
@@ -362,7 +364,7 @@ class PHNovDet(object):
         return predict  # outlier point label -1 and internal point label 1
 
     def score_samples(self, x_test):
-        # self.predict(x)
+        self.predict(x_test=x_test)
         return self.scores
 
     # def OX_fit(self, X, output_path='.'):
