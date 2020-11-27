@@ -20,11 +20,15 @@ import random
 from tda.model import multi_model
 import matplotlib.pyplot as plt
 import os
+import random
 
 
 def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, branching_factor=20, cluster_threshold=0.8,
-               linkage='ward'):
+               linkage='ward', random_state=3):
+    # 获取数据集的名字
     file_name = os.path.split(path)[1]
+    auc = []
+    multiple = 1
     # 读取数据
     data = pd.read_csv(path, header=None)
 
@@ -40,31 +44,31 @@ def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, bran
     normals = np.array(normal_data.iloc[:, :-1])
     normal_labels = np.array(normal_data.iloc[:, -1])
 
-    auc = []
+    random.seed(random_state)
+    random.shuffle(normals)
 
-    for outer_train_size in np.arange(0.85, 0.95, 0.01):
-        outer_train_size = round(outer_train_size, 2)
-        # 划分正常样本为测试集和其他（用于再次划分为训练集和验证集）
-        svm_score, x_test, lof_score, y_test = train_test_split(normals, normal_labels, train_size=outer_train_size,
-                                                                random_state=3)
+    # 将测试集中添加异常点，成为真正的测试集
+    x_test = np.vstack((outliers, normals[: multiple * len(outliers)]))
+    y_test = np.hstack((outlier_labels, normal_labels[: multiple * len(outlier_labels)]))
+    # y_test[y_test == 'o'] = -1; y_test[y_test == 'n'] = 1
+    # 把y_test中满足条件 y_test == 'o'的输出为-1，其他输出为1。最后，转化为list，方便计算roc
+    y_test = list(np.where(y_test == 'o', -1, 1))
 
-        # 将测试集中添加异常点，称为真正的测试集
-        x_test = np.vstack((outliers, x_test))
-        y_test = np.hstack((outlier_labels, y_test))
-        # y_test[y_test == 'o'] = -1; y_test[y_test == 'n'] = 1
-        # 把y_test中满足条件 y_test == 'o'的输出为-1，其他输出为1。最后，转化为list，方便计算roc
-        y_test = list(np.where(y_test == 'o', -1, 1))
+    # 剩余的正常点用于训练模型
+    normals = normals[multiple * len(outliers):]
+    normal_labels = normal_labels[multiple * len(outlier_labels):]
 
-        for train_size in np.arange(0.85, 0.95, 0.01):
-            train_size = round(train_size, 2)
-            # 划分其他为训练集和验证集
-            x_train, x_cv, y_train, y_cv = train_test_split(svm_score, lof_score, train_size=train_size, random_state=3)
+    for train_size in np.arange(0.65, 0.95, 0.02):
+        train_size = round(train_size, 2)
+        # 划分其他为训练集和验证集
+        x_train, x_cv, y_train, y_cv = train_test_split(normals, normal_labels, train_size=train_size,
+                                                        random_state=random_state)
 
-            auc_score = multi_model(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, threshold=0.5,
-                                    cluster=cluster, n_cluster=n_cluster, eps=eps, min_samples=min_samples,
-                                    branching_factor=branching_factor, cluster_threshold=cluster_threshold,
-                                    linkage=linkage)
-            auc.append(auc_score)
+        auc_score = multi_model(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, threshold=0.5,
+                                cluster=cluster, n_cluster=n_cluster, eps=eps, min_samples=min_samples,
+                                branching_factor=branching_factor, cluster_threshold=cluster_threshold,
+                                linkage=linkage, random_state=random_state)
+        auc.append(auc_score)
 
     svm_score = []
     lof_score = []
@@ -78,7 +82,7 @@ def just_do_it(path, cluster='dbscan', n_cluster=25, eps=15, min_samples=5, bran
     mean_lof = np.mean(lof_score)
     mean_ph = np.mean(ph_score)
 
-    if mean_ph > 0.9 and mean_ph > mean_lof and mean_ph > mean_svm:
+    if mean_ph > mean_lof or mean_ph > mean_svm:
 
         x = np.linspace(0, 1, len(ph_score))
         svm_plot, = plt.plot(x, svm_score, 'ro')

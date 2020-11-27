@@ -46,12 +46,12 @@ def main(cluster):
 
 
 if __name__ == '__main__':
-    clusters = ['spectral', 'hierarchical', 'kmeans', 'dbscan', 'optics', 'birch']
+    clusters = ['spectral', 'hierarchical', 'dbscan', 'optics', 'birch']
     # for cluster in clusters:
     #     print("使用聚类方法 {0} 进行处理 ...".format(cluster))
     #     main(cluster=cluster)
     #     print("\t聚类方法 {0} 处理结束 ^_^".format(cluster))
     # print("整个任务完成！")
-    with Pool(6) as p:
+    with Pool(5) as p:
         p.map(main, clusters)
     print("整个任务完成！")
