@@ -37,27 +37,27 @@ def just_do_it(path, cluster, multiple, random_state):
     print("\t正在使用聚类算法 {0} 处理数据集 {1} ...".format(cluster, file_name.split('-')[0]))
 
     if cluster == 'spectral' or cluster == 'kmeans' or cluster == 'tomato':
-        for n_cluster in trange(10, 38):
+        for n_cluster in trange(10, 30):
             ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                     cluster=cluster, n_cluster=n_cluster, random_state=random_state)
             auc_ph.append([(cluster, n_cluster), ph])
     elif cluster == 'hierarchical':
-        for n_cluster in trange(10, 38):
+        for n_cluster in trange(10, 30):
             for linkage in ['ward', 'complete', 'average', 'single']:
                 ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                         cluster=cluster, n_cluster=n_cluster, linkage=linkage,
                                         random_state=random_state)
                 auc_ph.append([(cluster, n_cluster, linkage), ph])
     elif cluster == 'dbscan' or cluster == 'optics':
-        for eps in trange(5, 20):
+        for eps in trange(5, 15):
             for min_samples in range(3, 9):
                 ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                         cluster=cluster, eps=eps, min_samples=min_samples, random_state=random_state)
                 auc_ph.append([(cluster, eps, min_samples), ph])
     elif cluster == 'birch':
-        for n_cluster in trange(10, 38):
-            for branching_factor in range(5, 50):
-                for cluster_threshold in np.arange(0.5, 0.9, 0.1):
+        for n_cluster in trange(10, 30):
+            for branching_factor in range(5, 25):
+                for cluster_threshold in np.arange(0.5, 0.9, 0.2):
                     ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                             cluster=cluster, n_cluster=n_cluster, branching_factor=branching_factor,
                                             cluster_threshold=cluster_threshold, random_state=random_state)
@@ -65,4 +65,4 @@ def just_do_it(path, cluster, multiple, random_state):
 
     print("\t聚类算法 {0} 完成数据集 {1} 的处理工作 ^_^".format(cluster, file_name.split('-')[0]))
 
-    draw(auc_classical, auc_ph, file_name)
+    draw(auc_classical, auc_ph, file_name, os.path.split(path)[0])

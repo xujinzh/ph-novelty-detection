@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 
-def draw(auc_classical, auc_ph, file_name):
+def draw(auc_classical, auc_ph, file_name, path):
     lof_score, svm_score = auc_classical
 
     ph_scores = [x[1] for x in auc_ph]
@@ -32,12 +32,12 @@ def draw(auc_classical, auc_ph, file_name):
     plt.legend([svm_plot, lof_plot, ph_plot], ["svm", "lof", "ph"])
 
     plt.title("cluster={0}, data={1}".format(cluster, data_name))
-    plt.savefig("./output/data={0}-cluster={1}.png".format(data_name, cluster))
+    plt.savefig(path + "/../output/data={0}-cluster={1}.png".format(data_name, cluster))
     plt.close()
 
     # 把结果保存到文件
     score_dict = {'argument': ph_argument, 'ph': ph_scores, 'lof': lof_scores, 'svm': svm_scores}
-    csv_file = './output/data={0}-cluster={1}.csv'.format(data_name, cluster)
+    csv_file = path + '/../output/data={0}-cluster={1}.csv'.format(data_name, cluster)
 
     df = pd.DataFrame(score_dict)
 
