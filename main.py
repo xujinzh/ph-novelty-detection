@@ -15,7 +15,7 @@ from multiprocessing import Pool
 import argparse
 import warnings
 
-warnings.filterwarnings("ignore")
+warnings.simplefilter("ignore")
 
 
 def main(cluster):
@@ -46,7 +46,8 @@ if __name__ == '__main__':
     #     print("\t聚类方法 {0} 处理结束 ^_^".format(cluster))
 
     # 使用CPU 多核心多进程加速计算
-    with Pool(2) as p:
-        p.map(main, clusters)
-
+    p = Pool(min(3, os.cpu_count() - 1))
+    p.map_async(main, clusters)
+    p.close()
+    p.join()
     print("整个任务完成！")
