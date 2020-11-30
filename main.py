@@ -20,8 +20,9 @@ warnings.filterwarnings("ignore")
 
 def main(cluster):
     ap = argparse.ArgumentParser()
-    ap.add_argument('-d', '--data', required=False, default='./data', help='data path')
-    ap.add_argument('-m', '--multiple', required=False, default=2, help='normal point than novelty point in test data')
+    ap.add_argument('-d', '--data', required=True, type=str, default='./data', help='data path')
+    ap.add_argument('-m', '--multiple', required=True, type=int, default=1,
+                    help='normal point than novelty point in test data')
     args = vars(ap.parse_args())
 
     # 读取数据
@@ -38,14 +39,14 @@ def main(cluster):
 if __name__ == '__main__':
     clusters = ['tomato', 'spectral', 'hierarchical', 'dbscan', 'optics', 'birch', 'kmeans']
 
-    # # 单核计算
+    # 单核计算
     # for cluster in clusters:
     #     print("使用聚类方法 {0} 进行处理 ...".format(cluster))
     #     main(cluster=cluster)
     #     print("\t聚类方法 {0} 处理结束 ^_^".format(cluster))
 
     # 使用CPU 多核心多进程加速计算
-    with Pool() as p:
+    with Pool(2) as p:
         p.map(main, clusters)
 
     print("整个任务完成！")
