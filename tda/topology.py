@@ -121,8 +121,8 @@ class PHNovDet(object):
         """
         # alpha complex
         points = preprocessing.minmax_scale(points)
-        complex = gudhi.AlphaComplex(points=points)
-
+        # complex = gudhi.AlphaComplex(points=points)
+        complex = gudhi.RipsComplex(points=points)
         # self.sparse for save time but have different result in every time run
         simplex_tree = complex.create_simplex_tree()
         diagram = simplex_tree.persistence()
@@ -311,8 +311,7 @@ class PHNovDet(object):
         centroids = np.array([])
 
         if cluster == 'kmeans':
-            clustering = KMeans(n_clusters=n_cluster, random_state=self.random_state, n_jobs=os.cpu_count() - 1).fit(
-                x_data)
+            clustering = KMeans(n_clusters=n_cluster, random_state=self.random_state).fit(x_data)
             centroids = clustering.cluster_centers_
 
         elif cluster in ['birch', 'dbscan', 'optics', 'hierarchical', 'spectral', 'tomato']:
