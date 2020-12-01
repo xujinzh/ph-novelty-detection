@@ -13,6 +13,7 @@ import warnings
 import collections
 import operator
 import random
+import os
 from sklearn.cluster import Birch, KMeans, DBSCAN, OPTICS, AgglomerativeClustering, SpectralClustering
 from gudhi.clustering.tomato import Tomato
 
@@ -310,22 +311,24 @@ class PHNovDet(object):
         centroids = np.array([])
 
         if cluster == 'kmeans':
-            clustering = KMeans(n_clusters=n_cluster, random_state=self.random_state).fit(x_data)
+            clustering = KMeans(n_clusters=n_cluster, random_state=self.random_state, n_jobs=os.cpu_count() - 1).fit(
+                x_data)
             centroids = clustering.cluster_centers_
 
         elif cluster in ['birch', 'dbscan', 'optics', 'hierarchical', 'spectral', 'tomato']:
             model = Birch(n_clusters=n_cluster, branching_factor=branching_factor, threshold=threshold)
             if cluster == 'dbscan':
-                model = DBSCAN(eps=eps, min_samples=min_samples)
+                model = DBSCAN(eps=eps, min_samples=min_samples, n_jobs=os.cpu_count() - 1)
             elif cluster == 'tomato':
-                model = Tomato(density_type="DTM", n_clusters=n_cluster)
+                model = Tomato(density_type="DTM", n_clusters=n_cluster, n_jobs=os.cpu_count() - 1)
             elif cluster == 'optics':
-                model = OPTICS(eps=eps, min_samples=min_samples)
+                model = OPTICS(eps=eps, min_samples=min_samples, n_jobs=os.cpu_count() - 1)
             elif cluster == 'hierarchical':
                 model = AgglomerativeClustering(n_clusters=n_cluster, linkage=linkage)
             elif cluster == 'spectral':
                 model = SpectralClustering(n_clusters=n_cluster, assign_labels="discretize", eigen_solver='arpack',
-                                           affinity="nearest_neighbors", random_state=self.random_state)
+                                           affinity="nearest_neighbors", random_state=self.random_state,
+                                           n_jobs=os.cpu_count() - 1)
             clustering = model.fit(x_data)
             labels = clustering.labels_
             unique_labels = np.unique(labels)

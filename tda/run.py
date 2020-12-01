@@ -36,7 +36,7 @@ def just_do_it(path, cluster, multiple, random_state):
     auc_ph = []
     print("\t正在使用聚类算法 {0} 处理数据集 {1} ...".format(cluster, file_name.split('-')[0]))
 
-    if cluster == 'spectral' or cluster == 'kmeans' or cluster == 'tomato':
+    if cluster in ['spectral', 'kmeans', 'tomato']:
         for n_cluster in trange(10, 30):
             ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                     cluster=cluster, n_cluster=n_cluster, random_state=random_state)
@@ -48,7 +48,7 @@ def just_do_it(path, cluster, multiple, random_state):
                                         cluster=cluster, n_cluster=n_cluster, linkage=linkage,
                                         random_state=random_state)
                 auc_ph.append([(cluster, n_cluster, linkage), ph])
-    elif cluster == 'dbscan' or cluster == 'optics':
+    elif cluster in ['dbscan', 'optics']:
         for eps in trange(5, 15):
             for min_samples in range(3, 9):
                 ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
