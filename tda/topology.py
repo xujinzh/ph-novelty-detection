@@ -312,15 +312,18 @@ class PHNovDet(object):
             clustering = model.fit(x_data)
             labels = clustering.labels_
             unique_labels = np.unique(labels)
-            # assert len(unique_labels) >= 4, "聚类数小于等于4，请调整DBSCAN模型的半径（eps）和最小样本点（min_samples）的取值，" \
-            #                                 "以匹配数据集聚类"
-            if len(unique_labels) <= 4:
+
+            if len(unique_labels) < 3:
                 return 0
             for i, label in zip(range(len(unique_labels)), unique_labels):
                 if i == 0:
-                    centroids = np.median(x_data[labels == label], axis=0)
+                    centroids1 = np.median(x_data[labels == label], axis=0)
+                    centroids2 = np.mean(x_data[labels == label], axis=0)
+                    centroids = np.vstack([centroids1, centroids2])
                 else:
-                    new_center = np.median(x_data[labels == label], axis=0)
+                    centroids1 = np.median(x_data[labels == label], axis=0)
+                    centroids2 = np.mean(x_data[labels == label], axis=0)
+                    new_center = np.vstack([centroids1, centroids2])
                     centroids = np.vstack([centroids, new_center])
 
         self.shape_data = centroids
