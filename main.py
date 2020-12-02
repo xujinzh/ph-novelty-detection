@@ -46,7 +46,7 @@ if __name__ == '__main__':
     #     print("\t聚类方法 {0} 处理结束 ^_^".format(cluster))
 
     # 使用CPU 多核心多进程加速计算
-    p = Pool(min(3, os.cpu_count() - 1))
+    p = Pool(processes=min(3, os.cpu_count()))
     p.map_async(main, clusters)
     p.close()
     p.join()

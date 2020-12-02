@@ -107,11 +107,7 @@ class PHNovDet(object):
         :param points: point cloud
         :return: persistent diagram in list form
         """
-        _diagram = self._ph(points)
-        diagram = []
-        for i, d in enumerate(_diagram):
-            diagram.append(list(_diagram[i][1]))
-        return diagram
+        return [p[1] for p in self._ph(points)]
 
     def _ph(self, points):
         """
@@ -119,33 +115,18 @@ class PHNovDet(object):
         :param points: point cloud
         :return: persistent diagram
         """
-        # alpha complex
         points = preprocessing.minmax_scale(points)
-        # complex = gudhi.AlphaComplex(points=points)
-        complex = gudhi.RipsComplex(points=points)
-        # self.sparse for save time but have different result in every time run
-        simplex_tree = complex.create_simplex_tree()
-        diagram = simplex_tree.persistence()
-        return diagram
+        rips_complex = gudhi.RipsComplex(points=points)
+        simplex_tree = rips_complex.create_simplex_tree(max_dimension=3)
+        return simplex_tree.persistence()
 
-        # rips complex
         # points = preprocessing.minmax_scale(points)
         # # minmax_scale(normalization) need less time than scale(standardization)
         # # because max_edge_length is ceil(sqrt{numbers of variables}) in minmax_scale; but that is bigger in scale
         #
         # rips_complex = gudhi.RipsComplex(points=points, max_edge_length=self.max_edge_length, sparse=self.sparse)
-        #
         # # self.sparse for save time but have different result in every time run
         # simplex_tree = rips_complex.create_simplex_tree(max_dimension=self.max_dimension)
-        # diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
-        #                                    min_persistence=self.min_persistence)
-        # return diagram
-
-        # witness complex
-        # data = preprocessing.minmax_scale(points)
-        # landmarks = gudhi.pick_n_random_points(points=data, nb_points=20)
-        # witness_complex = gudhi.EuclideanWitnessComplex(witnesses=data, landmarks=landmarks)
-        # simplex_tree = witness_complex.create_simplex_tree(max_alpha_square=100, limit_dimension=3)
         # diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
         #                                    min_persistence=self.min_persistence)
         # return diagram
