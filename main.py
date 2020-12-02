@@ -33,6 +33,9 @@ def main(cluster):
 
     # 模型比较
     for file_path in data_paths:
+        if not os.path.isfile(file_path):
+            print(f'文件：{file_path} 不是数据集，将跳过该文件！！！')
+            continue
         run.just_do_it(path=file_path, cluster=cluster, multiple=multiple, random_state=3)
 
 
