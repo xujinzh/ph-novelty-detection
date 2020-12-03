@@ -109,7 +109,8 @@ class PHNovDet(object):
         """
         return [p[1] for p in self._ph(points)]
 
-    def _ph(self, points):
+    @staticmethod
+    def _ph(points):
         """
         compute persistent diagram by geometry understanding in higher dimensions package
         :param points: point cloud
