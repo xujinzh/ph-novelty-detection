@@ -298,17 +298,17 @@ class PHNovDet(object):
         elif cluster in ['birch', 'dbscan', 'optics', 'hierarchical', 'spectral', 'tomato']:
             model = Birch(n_clusters=n_cluster, branching_factor=branching_factor, threshold=threshold)
             if cluster == 'dbscan':
-                model = DBSCAN(eps=eps, min_samples=min_samples, n_jobs=os.cpu_count() - 1)
+                model = DBSCAN(eps=eps, min_samples=min_samples, n_jobs=- 1)
             elif cluster == 'tomato':
-                model = Tomato(density_type="DTM", n_clusters=n_cluster, n_jobs=os.cpu_count() - 1)
+                model = Tomato(density_type="DTM", n_clusters=n_cluster, n_jobs=- 1)
             elif cluster == 'optics':
-                model = OPTICS(eps=eps, min_samples=min_samples, n_jobs=os.cpu_count() - 1)
+                model = OPTICS(eps=eps, min_samples=min_samples, n_jobs=- 1)
             elif cluster == 'hierarchical':
                 model = AgglomerativeClustering(n_clusters=n_cluster, linkage=linkage)
             elif cluster == 'spectral':
                 model = SpectralClustering(n_clusters=n_cluster, assign_labels="discretize", eigen_solver='arpack',
                                            affinity="nearest_neighbors", random_state=self.random_state,
-                                           n_jobs=os.cpu_count() - 1)
+                                           n_jobs=- 1)
             clustering = model.fit(x_data)
             labels = clustering.labels_
             unique_labels = np.unique(labels)
