@@ -101,14 +101,6 @@ class PHNovDet(object):
         self.shape_data = None
         self.cross_separation = cross_separation
 
-    def _diagram(self, points):
-        """
-        return diagram in list form
-        :param points: point cloud
-        :return: persistent diagram in list form
-        """
-        return [p[1] for p in self._ph(points)]
-
     @staticmethod
     def _ph(points):
         """
@@ -131,6 +123,14 @@ class PHNovDet(object):
         # diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
         #                                    min_persistence=self.min_persistence)
         # return diagram
+
+    def _diagram(self, points):
+        """
+        return diagram in list form
+        :param points: point cloud
+        :return: persistent diagram in list form
+        """
+        return [p[1] for p in self._ph(points)]
 
     @staticmethod
     def _bottleneck(diag1, diag2):
