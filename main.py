@@ -21,7 +21,7 @@ warnings.simplefilter("ignore")
 def main(cluster):
     ap = argparse.ArgumentParser()
     ap.add_argument('-d', '--data', required=True, type=str, default='./data', help='data path')
-    ap.add_argument('-m', '--multiple', required=False, type=int, default=1,
+    ap.add_argument('-m', '--multiple', required=False, type=float, default=1.0,
                     help='normal point than novelty point in test data')
     args = vars(ap.parse_args())
 
@@ -49,8 +49,6 @@ if __name__ == '__main__':
     #     print("\t聚类方法 {0} 处理结束 ^_^".format(cluster))
 
     # 使用CPU 多核心多进程加速计算
-    p = Pool(processes=min(5, os.cpu_count()))
-    p.map_async(main, clusters)
-    p.close()
-    p.join()
+    p = Pool(processes=min(6, os.cpu_count()))
+    p.map(main, clusters)
     print("整个任务完成！")

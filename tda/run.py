@@ -37,27 +37,27 @@ def just_do_it(path, cluster, multiple, random_state):
     print("\t正在使用聚类算法 {0} 处理数据集 {1} ...".format(cluster, file_name.split('-')[0]))
 
     if cluster in ['spectral', 'kmeans', 'tomato']:
-        for n_cluster in trange(10, 30):
+        for n_cluster in trange(8, 39):
             ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                     cluster=cluster, n_cluster=n_cluster, random_state=random_state)
             auc_ph.append([(cluster, n_cluster), ph])
     elif cluster == 'hierarchical':
-        for n_cluster in trange(10, 30):
+        for n_cluster in trange(8, 39):
             for linkage in ['ward', 'complete', 'average', 'single']:
                 ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                         cluster=cluster, n_cluster=n_cluster, linkage=linkage,
                                         random_state=random_state)
                 auc_ph.append([(cluster, n_cluster, linkage), ph])
     elif cluster in ['dbscan', 'optics']:
-        for eps in trange(5, 15):
-            for min_samples in range(3, 9):
+        for eps in trange(3, 19):
+            for min_samples in range(3, 19):
                 ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                         cluster=cluster, eps=eps, min_samples=min_samples, random_state=random_state)
                 auc_ph.append([(cluster, eps, min_samples), ph])
     elif cluster == 'birch':
-        for n_cluster in trange(10, 30):
-            for branching_factor in range(5, 25):
-                for cluster_threshold in np.arange(0.5, 0.9, 0.2):
+        for n_cluster in trange(8, 39):
+            for branching_factor in range(3, 29):
+                for cluster_threshold in np.arange(0.3, 0.9, 0.1):
                     ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                             cluster=cluster, n_cluster=n_cluster, branching_factor=branching_factor,
                                             cluster_threshold=cluster_threshold, random_state=random_state)

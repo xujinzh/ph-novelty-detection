@@ -19,8 +19,8 @@ def PersistentHomology(x_train, y_train, x_test, y_test, max_dimension=1, ratio=
                        max_edge_length=max_edge_length, cross_separation=cross_separation,
                        random_state=random_state, threshold=threshold)
 
-    result = clf.cluster_fit(x_train, y_train, cluster=cluster, n_cluster=n_cluster, branching_factor=branching_factor,
-                             threshold=cluster_threshold, eps=eps, min_samples=min_samples, linkage=linkage)
+    result = clf.fit(x_train, y_train, cluster=cluster, n_cluster=n_cluster, branching_factor=branching_factor,
+                     threshold=cluster_threshold, eps=eps, min_samples=min_samples, linkage=linkage)
 
     if result == 0:
         return 0.5

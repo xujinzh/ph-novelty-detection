@@ -31,7 +31,7 @@ def prepare_data(path, multiple=2, random_state=3):
     random.shuffle(normals)
 
     # 截断正常样本点，和异常点组成测试集
-    cutoff = multiple * len(outliers)
+    cutoff = int(multiple * len(outliers))
 
     # 将测试集中添加异常点，成为真正的测试集
     x_test = np.vstack((outliers, normals[: cutoff]))
