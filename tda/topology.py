@@ -165,12 +165,11 @@ class PHNovDet(object):
 
         labels = model.fit_predict(x_data)
         unique_labels = np.unique(labels)
-        clusters = len(unique_labels)
 
-        if clusters < 3:
+        if len(unique_labels) < 3:
             return 0
 
-        for i, label in zip(range(clusters), unique_labels):
+        for i, label in enumerate(unique_labels):
             if i == 0:
                 median = np.median(x_data[labels == label], axis=0)
                 mean = np.mean(x_data[labels == label], axis=0)
