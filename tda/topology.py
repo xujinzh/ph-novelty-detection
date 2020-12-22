@@ -74,8 +74,8 @@ class PHNovDet(object):
     scores = []
 
     def __init__(self, max_edge_length=12.0, max_dimension=1, homology_coefficient_field=2, min_persistence=0,
-                 sparse=0.0, threshold=0.5, base=15, ratio=0.25, standard_deviation_coefficient=3, random_state=42,
-                 shuffle=True, cross_separation=3):
+                 sparse=2.0, threshold=0.5, base=15, ratio=0.25, standard_deviation_coefficient=3, random_state=42,
+                 shuffle=True, cross_separation=3, e=0.1):
         self.max_edge_length = max_edge_length
         self.max_dimension = max_dimension
         self.homology_coefficient_field = homology_coefficient_field
@@ -91,29 +91,20 @@ class PHNovDet(object):
         self.shape = None
         self.shape_data = None
         self.cross_separation = cross_separation
+        self.e = e
 
-    @staticmethod
-    def _ph(points):
+    def _ph(self, points):
         """
         compute persistent diagram by geometry understanding in higher dimensions package
         :param points: point cloud
         :return: persistent diagram
         """
         points = preprocessing.minmax_scale(points)
-        rips_complex = gudhi.RipsComplex(points=points)
-        simplex_tree = rips_complex.create_simplex_tree(max_dimension=3)
-        return simplex_tree.persistence()
-
-        # points = preprocessing.minmax_scale(points)
-        # # minmax_scale(normalization) need less time than scale(standardization)
-        # # because max_edge_length is ceil(sqrt{numbers of variables}) in minmax_scale; but that is bigger in scale
-        #
-        # rips_complex = gudhi.RipsComplex(points=points, max_edge_length=self.max_edge_length, sparse=self.sparse)
-        # # self.sparse for save time but have different result in every time run
-        # simplex_tree = rips_complex.create_simplex_tree(max_dimension=self.max_dimension)
-        # diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
-        #                                    min_persistence=self.min_persistence)
-        # return diagram
+        rips_complex = gudhi.RipsComplex(points=points, sparse=self.sparse)
+        simplex_tree = rips_complex.create_simplex_tree(max_dimension=self.max_dimension)
+        diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
+                                           min_persistence=self.min_persistence)
+        return diagram
 
     def _diagram(self, points):
         """
@@ -123,16 +114,14 @@ class PHNovDet(object):
         """
         return [p[1] for p in self._ph(points)]
 
-    @staticmethod
-    def _bottleneck(diag1, diag2):
+    def _bottleneck(self, diag1, diag2):
         """
         compute bottleneck distance between diagram and diagram_novelty
         :param diag1: persistent diagram for shape data in list form
         :param diag2: persistent diagram for cup dataset with novelty data and shape date in list form
         :return: bottleneck distance
         """
-        return gudhi.bottleneck_distance(diag1, diag2)
-        # return gudhi.bottleneck.PyCapsule.bottleneck_distance(diagram, diagram_novelty, 0.05)  # e = 0.05 节省时间
+        return gudhi.bottleneck_distance(diag1, diag2, self.e)
 
     def fit(self, x_data=None, y_data=None, cluster='kmeans', n_cluster=20, branching_factor=100,
             threshold=1.0, eps=3, min_samples=3, linkage='ward'):
@@ -155,7 +144,6 @@ class PHNovDet(object):
             model = KMeans(n_clusters=n_cluster, random_state=self.random_state).fit(x_data)
 
         labels = model.fit_predict(x_data)
-        # unique_labels = np.unique(labels)
         unique_labels = Counter(labels)
 
         if len(unique_labels) < 3:

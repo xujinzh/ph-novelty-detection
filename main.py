@@ -39,14 +39,7 @@ def main(cluster):
 
 @display_time
 def do():
-    # clusters = ['tomato', 'spectral', 'hierarchical', 'dbscan', 'optics', 'birch', 'kmeans']
-    clusters = ['tomato', 'spectral', 'hierarchical', 'optics', 'kmeans']
-
-    # 单核计算
-    # for cluster in clusters:
-    #     print("使用聚类方法 {0} 进行处理 ...".format(cluster))
-    #     main(cluster=cluster)
-    #     print("\t聚类方法 {0} 处理结束 ^_^".format(cluster))
+    clusters = ['tomato', 'spectral', 'hierarchical', 'dbscan', 'optics', 'birch', 'kmeans']
 
     # 使用CPU 多核心多进程加速计算
     p = Pool(processes=os.cpu_count())

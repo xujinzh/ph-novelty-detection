@@ -10,11 +10,11 @@ from tda import topology as top
 from tda import roc
 
 
-def PersistentHomology(x_train, y_train, x_test, y_test, max_dimension=1, ratio=0.3, standard_deviation_coefficient=3,
+def PersistentHomology(x_train, y_train, x_test, y_test, max_dimension=3, ratio=0.3, standard_deviation_coefficient=3,
                        shuffle=False, max_edge_length=6, cross_separation=3, random_state=3, threshold=0.45,
                        cluster='spectral', n_cluster=25, eps=15, min_samples=4, branching_factor=20,
-                       cluster_threshold=0.8, linkage='ward'):
-    clf = top.PHNovDet(max_dimension=max_dimension, ratio=ratio,
+                       cluster_threshold=0.8, linkage='ward', e=0.1, sparse=2):
+    clf = top.PHNovDet(max_dimension=max_dimension, ratio=ratio, e=e, sparse=sparse,
                        standard_deviation_coefficient=standard_deviation_coefficient, shuffle=shuffle,
                        max_edge_length=max_edge_length, cross_separation=cross_separation,
                        random_state=random_state, threshold=threshold)
