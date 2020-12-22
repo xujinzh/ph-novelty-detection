@@ -15,7 +15,7 @@ from pathlib import Path
 
 def draw(auc_classical, auc_ph, file_name, path):
     lof_score, svm_score = auc_classical
-
+    auc_ph.sort(reverse=True, key=lambda x: x[1])
     ph_scores = [x[1] for x in auc_ph]
     ph_argument = [x[0] for x in auc_ph]
     len_ph_score = len(ph_scores)

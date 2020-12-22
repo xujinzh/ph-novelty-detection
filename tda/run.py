@@ -7,19 +7,10 @@
 # @Software: PyCharm
 
 import numpy as np
-import pandas as pd
-from tda import topology as top
-from tda import roc
-import copy
 from tda.comparison import classical
-from sklearn.model_selection import train_test_split
-from sklearn.utils.multiclass import type_of_target
-from sklearn.metrics import roc_auc_score
-import random
 from tda.model import PersistentHomology
-import matplotlib.pyplot as plt
 import os
-from tqdm import trange, tqdm
+from tqdm import trange
 from tda.preprocessing import prepare_data
 from tda.plot import draw
 

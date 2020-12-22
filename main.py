@@ -7,9 +7,7 @@
 # @Software: PyCharm
 
 from tda import run
-import numpy as np
 import os
-from tqdm import tqdm, trange
 from tda.timestamps import display_time
 from multiprocessing import Pool
 import argparse
@@ -39,8 +37,10 @@ def main(cluster):
         run.just_do_it(path=file_path, cluster=cluster, multiple=multiple, random_state=3)
 
 
-if __name__ == '__main__':
-    clusters = ['tomato', 'spectral', 'hierarchical', 'dbscan', 'optics', 'birch', 'kmeans']
+@display_time
+def do():
+    # clusters = ['tomato', 'spectral', 'hierarchical', 'dbscan', 'optics', 'birch', 'kmeans']
+    clusters = ['tomato', 'spectral', 'hierarchical', 'optics', 'kmeans']
 
     # 单核计算
     # for cluster in clusters:
@@ -49,6 +49,10 @@ if __name__ == '__main__':
     #     print("\t聚类方法 {0} 处理结束 ^_^".format(cluster))
 
     # 使用CPU 多核心多进程加速计算
-    p = Pool(processes=min(6, os.cpu_count()))
+    p = Pool(processes=os.cpu_count())
     p.map(main, clusters)
     print("整个任务完成！")
+
+
+if __name__ == '__main__':
+    do()
