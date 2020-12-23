@@ -74,8 +74,8 @@ class PHNovDet(object):
     scores = []
 
     def __init__(self, max_edge_length=12.0, max_dimension=1, homology_coefficient_field=2, min_persistence=0,
-                 sparse=2.0, threshold=0.5, base=15, ratio=0.25, standard_deviation_coefficient=3, random_state=42,
-                 shuffle=True, cross_separation=3, e=0.1):
+                 sparse=1.0, threshold=0.5, base=15, ratio=0.25, standard_deviation_coefficient=3, random_state=42,
+                 shuffle=True, cross_separation=3, e=0.0):
         self.max_edge_length = max_edge_length
         self.max_dimension = max_dimension
         self.homology_coefficient_field = homology_coefficient_field
@@ -146,7 +146,7 @@ class PHNovDet(object):
         labels = model.fit_predict(x_data)
         unique_labels = Counter(labels)
 
-        if len(unique_labels) < 3:
+        if len(unique_labels) < 2:
             return 0
 
         for i, label in enumerate(unique_labels):

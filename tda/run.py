@@ -40,15 +40,15 @@ def just_do_it(path, cluster, multiple, random_state):
                                         random_state=random_state)
                 auc_ph.append([(cluster, n_cluster, linkage), ph])
     elif cluster in ['dbscan', 'optics']:
-        for eps in trange(3, 19, 2):
-            for min_samples in range(3, 19, 2):
+        for eps in trange(2, 19):
+            for min_samples in range(2, 19):
                 ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                         cluster=cluster, eps=eps, min_samples=min_samples, random_state=random_state)
                 auc_ph.append([(cluster, eps, min_samples), ph])
     elif cluster == 'birch':
-        for n_cluster in trange(8, 28, 2):
-            for branching_factor in range(3, 19, 2):
-                for cluster_threshold in np.arange(0.3, 0.8, 0.2):
+        for n_cluster in trange(8, 28):
+            for branching_factor in range(3, 19):
+                for cluster_threshold in np.arange(0.3, 0.8, 0.1):
                     ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
                                             cluster=cluster, n_cluster=n_cluster, branching_factor=branching_factor,
                                             cluster_threshold=cluster_threshold, random_state=random_state)
