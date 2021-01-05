@@ -2,58 +2,50 @@
 # -*- coding: utf-8 -*-
 # @Author  : Jinzhong Xu
 # @Contact : jinzhongxu@csu.ac.cn
-# @Time    : 2020/8/21 18:23
 # @File    : run.py
+# @Time    : 2021/1/4 18:19
 # @Software: PyCharm
 
-import numpy as np
 from tda.comparison import classical
 from tda.model import PersistentHomology
-import os
-from tqdm import trange
 from tda.preprocessing import prepare_data
-from tda.plot import draw
+import argparse
+
+def just_do_it():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-d', '--data', required=True, type=str, default='./data/breast-cancer-unsupervised-ad.csv',
+                    help='data path')
+    ap.add_argument('-m', '--multiple', required=False, type=float, default=1.0,
+                    help='normal point than novelty point in test data')
+    ap.add_argument('-c', '--cluster', required=False, type=str, default='tomato', help='clutering method')
+    ap.add_argument('-n', '--nClusters', required=False, type=int, default=9, help='number of clusters')
+    ap.add_argument('-r', '--random', required=False, type=int, default=3, help='random state')
+    ap.add_argument('-l', '--linkage', required=False, type=str, default='ward', help='linkage for hierarchical')
+    ap.add_argument('-b', '--branchingFactor', required=False, type=int, default=3, help='branching_factor for birch')
+    ap.add_argument('-t', '--clusterThreshold', required=False, type=float, default=0.3, help='cluster_threshold for birch')
+    ap.add_argument('-p', '--plotRoc', required=False, type=bool, default=True, help='plot roc')
+
+    args = vars(ap.parse_args())
+
+    # 读取数据
+    data_path = args['data']
+    multiple = args['multiple']
+    cluster = args['cluster']
+    n_cluster = args['nClusters']
+    random_state = args['random']
+    linkage = args['linkage']
+    branching_factor = args['branchingFactor']
+    cluster_threshold = args['clusterThreshold']
+    plot_roc = args['plotRoc']
+
+    normals, normal_labels, x_test, y_test = prepare_data(data_path, multiple=multiple, random_state=random_state)
+
+    # 比较算法 lof 和 oneclass-svm
+    classical(x_train=normals, x_test=x_test, y_test=y_test, plot_roc=plot_roc)
+
+    PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test, random_state=random_state,
+                       cluster=cluster, n_cluster=n_cluster, linkage=linkage, branching_factor=branching_factor,
+                       cluster_threshold=cluster_threshold, plot_roc=plot_roc)
 
 
-def just_do_it(path, cluster, multiple, random_state):
-    # 获取数据集的名字
-    file_name = os.path.split(path)[1]
 
-    normals, normal_labels, x_test, y_test = prepare_data(path, multiple=multiple, random_state=random_state)
-
-    # 比较算法 lof and svm
-    auc_classical = classical(x_train=normals, x_test=x_test, y_test=y_test)
-
-    auc_ph = []
-    print("\t正在使用聚类算法 {0} 处理数据集 {1} ...".format(cluster, file_name.split('-')[0]))
-
-    if cluster in ['spectral', 'kmeans', 'tomato']:
-        for n_cluster in trange(8, 39):
-            ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
-                                    cluster=cluster, n_cluster=n_cluster, random_state=random_state)
-            auc_ph.append([(cluster, n_cluster), ph])
-    elif cluster == 'hierarchical':
-        for n_cluster in trange(8, 39):
-            for linkage in ['ward', 'complete', 'average', 'single']:
-                ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
-                                        cluster=cluster, n_cluster=n_cluster, linkage=linkage,
-                                        random_state=random_state)
-                auc_ph.append([(cluster, n_cluster, linkage), ph])
-    elif cluster in ['dbscan', 'optics']:
-        for eps in trange(2, 19):
-            for min_samples in range(2, 19):
-                ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
-                                        cluster=cluster, eps=eps, min_samples=min_samples, random_state=random_state)
-                auc_ph.append([(cluster, eps, min_samples), ph])
-    elif cluster == 'birch':
-        for n_cluster in trange(8, 28):
-            for branching_factor in range(3, 19):
-                for cluster_threshold in np.arange(0.3, 0.8, 0.1):
-                    ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
-                                            cluster=cluster, n_cluster=n_cluster, branching_factor=branching_factor,
-                                            cluster_threshold=cluster_threshold, random_state=random_state)
-                    auc_ph.append([(cluster, n_cluster, branching_factor, cluster_threshold), ph])
-
-    print("\t聚类算法 {0} 完成数据集 {1} 的处理工作 ^_^".format(cluster, file_name.split('-')[0]))
-
-    draw(auc_classical, auc_ph, file_name, os.path.split(path)[0])

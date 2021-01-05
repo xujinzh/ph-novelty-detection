@@ -150,28 +150,20 @@ class PHNovDet(object):
             return 0
 
         for i, label in enumerate(unique_labels):
+            qua_big = np.quantile(x_data[labels == label], .75, axis=0)
+            qua_small = np.quantile(x_data[labels == label], .25, axis=0)
+            median = np.median(x_data[labels == label], axis=0)
+            mean = np.mean(x_data[labels == label], axis=0)
             if i == 0:
                 if unique_labels[i] <= len(x_data) // len(unique_labels):
-                    median = np.median(x_data[labels == label], axis=0)
-                    mean = np.mean(x_data[labels == label], axis=0)
-                    self.shape_data = np.vstack([median, mean])
+                    self.shape_data = np.vstack((median, mean))
                 else:
-                    qua_big = np.quantile(x_data[labels == label], .75, axis=0)
-                    qua_small = np.quantile(x_data[labels == label], .25, axis=0)
-                    median = np.median(x_data[labels == label], axis=0)
-                    mean = np.mean(x_data[labels == label], axis=0)
-                    self.shape_data = np.vstack([qua_big, qua_small, median, mean])
+                    self.shape_data = np.vstack((qua_big, qua_small, median, mean))
             else:
                 if unique_labels[i] <= len(x_data) // len(unique_labels):
-                    median = np.median(x_data[labels == label], axis=0)
-                    mean = np.mean(x_data[labels == label], axis=0)
-                    self.shape_data = np.vstack([median, mean, self.shape_data])
+                    self.shape_data = np.vstack((median, mean, self.shape_data))
                 else:
-                    qua_big = np.quantile(x_data[labels == label], .75, axis=0)
-                    qua_small = np.quantile(x_data[labels == label], .25, axis=0)
-                    median = np.median(x_data[labels == label], axis=0)
-                    mean = np.mean(x_data[labels == label], axis=0)
-                    self.shape_data = np.vstack([qua_big, qua_small, median, mean, self.shape_data])
+                    self.shape_data = np.vstack((qua_big, qua_small, median, mean, self.shape_data))
 
         self.shape = self._diagram(self.shape_data)
         return self.shape_data, self.shape

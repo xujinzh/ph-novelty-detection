@@ -11,6 +11,7 @@ import pandas as pd
 import random
 
 
+
 def prepare_data(path, multiple=2, random_state=3):
     # 读取数据
     data = pd.read_csv(path, header=None)

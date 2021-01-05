@@ -16,8 +16,8 @@ def area(y_test, y_scores, pos_label=None, title="J - ", plot_roc=True):
         plt.ylabel('True Positive Rate')
         plt.xlabel('False Positive Rate')
         plt.title(title + 'ROC Curve')
+        plt.savefig('./output/' + title + 'ROC Curve')
         plt.show()
-
     return roc_auc
 
 
@@ -44,6 +44,6 @@ def area(y_test, y_scores, pos_label=None, title="J - ", plot_roc=True):
 
 
 if __name__ == "__main__":
-    y_true = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
-    y_scores = [2, 3, 2, 2, 3, 1.8, 2, 2.2, 2.3, 1.9]
-    area(y_test=y_true, y_scores=y_scores)
+    y_true = [-1, -1, -1, -1, -1, 1, 1, 1, 1, 1]
+    y_scores = [0.2, 0.3, 0.2, 0.2, 0.3, 1.8, 2, 2.2, 2.3, 1.9]
+    print(area(y_test=y_true, y_scores=y_scores))
