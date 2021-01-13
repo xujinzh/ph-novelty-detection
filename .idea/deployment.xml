@@ -5,7 +5,7 @@
       <paths name="jinzhongxu@10.2.28.11:22">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/jinzhongxu/tmp/ph-reduce" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/home/jinzhongxu/PythonProjects/phnd-remote" local="$PROJECT_DIR$" web="/" />
           </mappings>
         </serverdata>
       </paths>

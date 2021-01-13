@@ -37,11 +37,11 @@ def classical(x_train, x_test, y_test, plot_roc=False):
 
 
 if __name__ == '__main__':
-    path = '../data/satellite-unsupervised-ad.csv'
+    path = '../data/penGlobal-unsupervised-ad.csv'
     normals, normal_labels, x_test, y_test = prepare_data(path=path, multiple=1, random_state=3)
     # scikit-tda
     auc_tda = {}
-    for n in trange(75, 350):
+    for n in trange(75, 550):
         res = ripser(normals, n_perm=n)
         dgms_res = res["dgms"][1]
         idx_res = res["idx_perm"]
