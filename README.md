@@ -9,7 +9,7 @@
 ### 代码使用方法
 
 1. git clone https://github.com/xujinzh/ph-novelty-detection.git
-2. python main.py -d ./data/penLocal-unsupervised-ad.csv -c 'tomato' -n 22 -s 1.0
+2. python main.py --data data/penLocal-unsupervised-ad.csv --cluster 'tomato' --n_cluster 22
 
 数据使用的是 Harvard Dataverse 中的 **Unsupervised Anomaly Detection Benchmark**，更多数据请访问 [Unsupervised Anomaly Detection Dataverse(Kyushu University)](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OPQMVF) 下载。
 
