@@ -17,8 +17,19 @@ warnings.simplefilter("ignore")
 
 
 def explore(cluster):
+    '''
+    对最优结果进行探索
+    Parameters
+    ----------
+    cluster：聚类算法
+
+    Returns
+    -------
+
+    '''
+    # 配置输入参数
     ap = argparse.ArgumentParser()
-    ap.add_argument('-d', '--data', required=False, type=str, default='./data', help='data path')
+    ap.add_argument('-d', '--data', required=False, type=str, default='data', help='data path')
     ap.add_argument('-m', '--multiple', required=False, type=float, default=1.0,
                     help='normal point than novelty point in test data')
     args = vars(ap.parse_args())
@@ -37,13 +48,18 @@ def explore(cluster):
         train.just_do_it(path=file_path, cluster=cluster, multiple=multiple, random_state=3)
 
 
-@display_time
+@display_time("all")
 def do():
-    clusters = ['tomato', 'spectral', 'hierarchical', 'birch', 'kmeans']
+    clusters = ['tomato', 'spectral', 'hierarchical', 'birch',  'kmeans', 'optics', 'dbscan']
 
     # 使用CPU 多核心多进程加速计算
     p = Pool(processes=os.cpu_count())
     p.map(explore, clusters)
+
+    # # 使用单进程计算
+    # for cluster in clusters:
+    #     explore(cluster)
+
     print("整个任务完成！")
 
 

@@ -1,12 +1,21 @@
 # Authors: Jinzhong Xu <jinzhongxu@csu.ac.cn>
 # License: BSD 3-Clause "New" or "Revised" License
 
+import math
+import sys
+from collections import Counter
+from time import time
+
 import gudhi
 import numpy as np
+import ripserplusplus as rpp_py
+import torch
+from gudhi.clustering.tomato import Tomato
 from sklearn import preprocessing
 from sklearn.cluster import Birch, KMeans, DBSCAN, OPTICS, AgglomerativeClustering, SpectralClustering
-from gudhi.clustering.tomato import Tomato
-from collections import Counter
+from sklearn.utils.validation import check_array
+
+sys.setrecursionlimit(999999)
 
 __all__ = ["PHNovDet"]
 __author__ = "Jinzhong Xu"
@@ -73,9 +82,10 @@ class PHNovDet(object):
 
     scores = []
 
-    def __init__(self, max_edge_length=12.0, max_dimension=1, homology_coefficient_field=2, min_persistence=0,
-                 sparse=1.0, threshold=0.5, base=15, ratio=0.25, standard_deviation_coefficient=3, random_state=42,
-                 shuffle=True, cross_separation=3, e=0.0):
+    def __init__(self, max_edge_length=12.0, max_dimension=1, homology_coefficient_field=2,
+                 min_persistence=0, sparse=1.0, threshold=0.5, base=15, ratio=0.25,
+                 standard_deviation_coefficient=3, random_state=42, shuffle=True, cross_separation=3,
+                 e=0.0, use_gpu='yes'):
         self.max_edge_length = max_edge_length
         self.max_dimension = max_dimension
         self.homology_coefficient_field = homology_coefficient_field
@@ -92,6 +102,11 @@ class PHNovDet(object):
         self.shape_data = None
         self.cross_separation = cross_separation
         self.e = e
+        self.use_gpu = use_gpu
+
+    @property
+    def ph(self):
+        return self._ph
 
     def _ph(self, points):
         """
@@ -99,12 +114,22 @@ class PHNovDet(object):
         :param points: point cloud
         :return: persistent diagram
         """
-        points = preprocessing.minmax_scale(points)
-        rips_complex = gudhi.RipsComplex(points=points, sparse=self.sparse)
-        simplex_tree = rips_complex.create_simplex_tree(max_dimension=self.max_dimension)
-        diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
-                                           min_persistence=self.min_persistence)
+        if (torch.cuda.is_available()) and (self.use_gpu == 'yes'):
+            # 使用 GPU 加速计算持续条形码
+            d = rpp_py.run("--format point-cloud", preprocessing.minmax_scale(points))
+            diagram = [(k, v.item()) for k in d.keys() for v in d[k]]
+        else:
+            # 只使用 CPU 进行计算持续条形码
+            points = preprocessing.minmax_scale(points)
+            rips_complex = gudhi.RipsComplex(points=points, sparse=self.sparse)
+            simplex_tree = rips_complex.create_simplex_tree(max_dimension=self.max_dimension)
+            diagram = simplex_tree.persistence(homology_coeff_field=self.homology_coefficient_field,
+                                               min_persistence=self.min_persistence)
         return diagram
+
+    @property
+    def diagram(self):
+        return self._diagram
 
     def _diagram(self, points):
         """
@@ -123,13 +148,56 @@ class PHNovDet(object):
         """
         return gudhi.bottleneck_distance(diag1, diag2, self.e)
 
-    def fit(self, x_data=None, y_data=None, cluster='kmeans', n_cluster=20, branching_factor=100,
-            threshold=1.0, eps=3, min_samples=3, linkage='ward'):
+    @staticmethod
+    def small_into_big(labels, small_value, big_value):
+        """
+        把一个列表labels中指定的元素small_value，用一个值big_value替换
+        """
+        labels = [big_value if value == small_value else value for value in labels]
+        return labels
 
+    def flatten(self, labels, centroid=20):
+        """
+        把列表中的元素按照出现的次数摊平，使得元素出现次数趋近均等
+        具体地，将出现最小的元素用第二小的元素替换，如果两者都小于平均个数
+        """
+        # 统计每个元素出现的次数
+        counter_labels = Counter(labels)
+        # 如果聚类中心数小于 centroid，则不摊平
+        if len(counter_labels) <= centroid:
+            return labels
+        # 按照出现的次数从大到小排序
+        sort_labels = counter_labels.most_common()
+        # 平均元素个数阈值
+        thres = math.ceil(len(labels) / len(sort_labels))
+        # 如果最小次数的元素和第二下次数的元素都出现次数都小于均值，
+        # 那么把最小元素用第二下元素替换
+        # 递归执行检查和替换
+        if (sort_labels[-1][1] < thres) and (sort_labels[-2][1] < thres):
+            labels = self.small_into_big(labels=labels, small_value=sort_labels[-1][0],
+                                         big_value=sort_labels[-2][0])
+            return self.flatten(labels)
+        else:
+            return labels
+
+    @property
+    def fit(self):
+        return self._fit
+
+    def _fit(self, x_data=None, y_data=None, cluster='kmeans', n_cluster=20, branching_factor=100,
+             cluster_threshold=1.0, eps=3, min_samples=3, linkage='ward'):
+
+        x_data = check_array(x_data)
+        x_data = np.array(x_data)
+
+        print(f"开始使用聚类算法{cluster}进行聚类")
+
+        start_time = time()
         if cluster == 'tomato':
             model = Tomato(density_type="DTM", n_clusters=n_cluster, n_jobs=-1)
         elif cluster == 'birch':
-            model = Birch(n_clusters=n_cluster, branching_factor=branching_factor, threshold=threshold)
+            model = Birch(n_clusters=n_cluster, branching_factor=branching_factor,
+                          threshold=cluster_threshold)
         elif cluster == 'dbscan':
             model = DBSCAN(eps=eps, min_samples=min_samples, n_jobs=-1)
         elif cluster == 'optics':
@@ -137,18 +205,26 @@ class PHNovDet(object):
         elif cluster == 'hierarchical':
             model = AgglomerativeClustering(n_clusters=n_cluster, linkage=linkage)
         elif cluster == 'spectral':
-            model = SpectralClustering(n_clusters=n_cluster, assign_labels="discretize", eigen_solver='arpack',
-                                       affinity="nearest_neighbors", random_state=self.random_state,
-                                       n_jobs=-1)
+            model = SpectralClustering(n_clusters=n_cluster, assign_labels="discretize",
+                                       eigen_solver='arpack', affinity="nearest_neighbors",
+                                       random_state=self.random_state, n_jobs=-1)
         else:
             model = KMeans(n_clusters=n_cluster, random_state=self.random_state).fit(x_data)
 
         labels = model.fit_predict(x_data)
+        end_time = time()
+        print("聚类消耗时间：", (end_time - start_time))
+
+        print("聚类中心的个数是：", len(set(labels)))
+        # print('摊平前 聚类中心有：', len(set(labels)))
+        # 经测试，摊平后检测效果不好，因此，不建议摊平
+        # labels = self.flatten(labels=labels, centroid=20)
+        # print('摊平后 聚类中心有：', len(set(labels)))
+        # set导致精度降低
+        # unique_labels = list(set(labels))
         unique_labels = Counter(labels)
 
-        if len(unique_labels) < 2:
-            return 0
-
+        start_time = time()
         for i, label in enumerate(unique_labels):
             qua_big = np.quantile(x_data[labels == label], .75, axis=0)
             qua_small = np.quantile(x_data[labels == label], .25, axis=0)
@@ -166,27 +242,43 @@ class PHNovDet(object):
                     self.shape_data = np.vstack((qua_big, qua_small, median, mean, self.shape_data))
 
         self.shape = self._diagram(self.shape_data)
+        end_time = time()
+        print("计算数据形状消耗：", (end_time - start_time))
         return self.shape_data, self.shape
 
-    def predict(self, x_test):  # compute -1 and 1 respectively for outlier point and internal point
+    @property
+    def predict(self):
+        return self._predict
+
+    def _predict(self, x_test):  # compute -1 and 1 respectively for outlier point and internal point
         """
         compute -1 and 1 respectively for novelty sample and normal sample
         :param x_test: the data set for predict
         :return: the predicted label (-1 and 1)
         """
+        x_test = check_array(x_test)
+        x_test = np.array(x_test)
+
+        # binary = preprocessing.Binarizer(threshold=self.threshold)  # convert to 0 or 1
+        # scores = binary.transform([self._score_samples(x_test)])
+        # is_inlier = [1 - 2 * x for x in scores.tolist()[0]]  # convert 0 or 1 to 1 or -1
+        # is_inlier = [int(i) for i in is_inlier]
+
+        scores = self._score_samples(x_test)
+        is_inlier = np.ones(len(scores), dtype=int)
+        is_inlier[scores > self.threshold] = -1
+
+        return is_inlier  # Returns -1 for anomalies/outliers and +1 for inliers
+
+    @property
+    def score_samples(self):
+        return self._score_samples
+
+    def _score_samples(self, x_test):
         self.scores = []
         for i in range(len(x_test)):
             point = x_test[i]
             data_novelty = np.vstack((self.shape_data, point))
             diagram_novelty = self._diagram(data_novelty)
             self.scores.append(np.min([self._bottleneck(self.shape, diagram_novelty), 99]))
-        scores = np.array(self.scores)
-        binary = preprocessing.Binarizer(threshold=self.threshold)  # convert to 0 or 1
-        scores = binary.transform([scores])
-        predict = [1 - 2 * x for x in scores.tolist()[0]]  # convert 0 or 1 to 1 or -1
-        predict = [int(i) for i in predict]
-        return predict  # outlier point label -1 and internal point label 1
-
-    def score_samples(self, x_test):
-        self.predict(x_test)
-        return self.scores
+        return np.array(self.scores)
