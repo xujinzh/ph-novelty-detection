@@ -1,19 +1,25 @@
-# ph-novelty-detection (Persistent Homology for Novelty Detection)
+# Persistent Homology for Novelty Detection (PHND)
 
+## 基于代数拓扑同调理论的新颖点检测算法：PHND
 
-## [Satellite Unsupervised AD](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/data/satellite-unsupervised-ad.csv)
-37 Variables, 5099 Observations, 75 Anomalies (1.47%) 
+### 代码介绍
 
-![Persistent Homology(PH)](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/output/ph-satellite.png)![Local Outlier Factor(LOF)](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/output/lof-satellite.png)![One Class SVM(OneClassSVM)](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/output/oneclasssvm-satellite.png)
+代码是论文 "Novelty Detection with Topological Signatures" Jinzhong Xu, Junrong Du, Ye Li, Lele Xu, Lili Guo, Xuzhi Li. 的 Python 实现。
 
+### 代码使用方法
 
-## [Breast Cancer Unsupervised AD](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/data/breast-cancer-unsupervised-ad.csv)
-31 Variables, 366 Observations, 10 Anomalies (2.73%) 
+1. git clone https://github.com/xujinzh/ph-novelty-detection.git
+2. python main.py -d ./data/penLocal-unsupervised-ad.csv -c 'tomato' -n 22 -s 1.0
 
-![Persistent Homology(PH)](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/output/ph-breast.png)![Local Outlier Factor(LOF)](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/output/lof-breast.png)![One Class SVM(OneClassSVM)](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/output/oneclasssvm-breast.png)
+数据使用的是 Harvard Dataverse 中的 **Unsupervised Anomaly Detection Benchmark**，更多数据请访问 [Unsupervised Anomaly Detection Dataverse(Kyushu University)](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/OPQMVF) 下载。
 
+### 依赖包
 
-## [Aloi Unsupervised AD](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/data/aloi-unsupervised-ad.csv)
-26 Variables, 50,000 Observations, 1508 Anomalies (3.02%)
-
-![Persistent Homology(PH)](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/output/ph-aloi.png)![Local Outlier Factor(LOF)](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/output/lof-aloi.png)![One Class SVM(OneClassSVM)](https://raw.githubusercontent.com/xujinzh/ph-novelty-detection/master/output/oneclasssvm-aloi.png)
+- python3
+- numpy
+- boost
+- gudhi
+- matplotlib
+- scikit-learn
+- scikit-tda
+- pandas

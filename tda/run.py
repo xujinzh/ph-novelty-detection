@@ -2,59 +2,51 @@
 # -*- coding: utf-8 -*-
 # @Author  : Jinzhong Xu
 # @Contact : jinzhongxu@csu.ac.cn
-# @Time    : 2020/8/21 18:23
 # @File    : run.py
+# @Time    : 2021/1/4 18:19
 # @Software: PyCharm
 
-import numpy as np
-import pandas as pd
-from tda import topology as top
-from tda import roc
-import copy
-from sklearn.neighbors import LocalOutlierFactor
-from sklearn.svm import OneClassSVM
-from sklearn.model_selection import train_test_split
-from sklearn.utils.multiclass import type_of_target
-from sklearn.metrics import roc_auc_score
-import random
-from tda.model import multi_model
+from tda.comparison import classical
+from tda.model import PersistentHomology
+from tda.preprocessing import prepare_data
+import argparse
 
 
-def just_do_it(path):
+def just_do_it():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('-d', '--data', required=True, type=str, default='./data/breast-cancer-unsupervised-ad.csv',
+                    help='data path')
+    ap.add_argument('-m', '--multiple', required=False, type=float, default=1.0,
+                    help='normal point than novelty point in test data')
+    ap.add_argument('-c', '--cluster', required=False, type=str, default='tomato', help='clutering method')
+    ap.add_argument('-n', '--nClusters', required=False, type=int, default=9, help='number of clusters')
+    ap.add_argument('-r', '--random', required=False, type=int, default=3, help='random state')
+    ap.add_argument('-l', '--linkage', required=False, type=str, default='ward', help='linkage for hierarchical')
+    ap.add_argument('-b', '--branchingFactor', required=False, type=int, default=3, help='branching_factor for birch')
+    ap.add_argument('-t', '--clusterThreshold', required=False, type=float, default=0.3,
+                    help='cluster_threshold for birch')
+    ap.add_argument('-p', '--plotRoc', required=False, type=bool, default=True, help='plot roc')
+    ap.add_argument('-s', '--sparse', required=False, type=float, default=None, help='sparse for construct complex')
+
+    args = vars(ap.parse_args())
+
     # 读取数据
-    data = pd.read_csv(path, header=None)
+    data_path = args['data']
+    multiple = args['multiple']
+    cluster = args['cluster']
+    n_cluster = args['nClusters']
+    random_state = args['random']
+    linkage = args['linkage']
+    branching_factor = args['branchingFactor']
+    cluster_threshold = args['clusterThreshold']
+    plot_roc = args['plotRoc']
+    sparse = args['sparse']
 
-    # 获取异常数据和正常数据
-    outlier_data = data[data.iloc[:, -1] == 'o']
-    normal_data = data[data.iloc[:, -1] == 'n']
+    normals, normal_labels, x_test, y_test = prepare_data(data_path, multiple=multiple, random_state=random_state)
 
-    # 提取异常点到ndarray和异常点标签
-    outliers = np.array(outlier_data.iloc[:, :-1])
-    outlier_labels = np.array(outlier_data.iloc[:, -1])
+    # 比较算法 lof 和 oneclass-svm
+    classical(x_train=normals, x_test=x_test, y_test=y_test, plot_roc=plot_roc)
 
-    # 提取正常点到ndarray和正常点标签
-    normals = np.array(normal_data.iloc[:, :-1])
-    normal_labels = np.array(normal_data.iloc[:, -1])
-
-    for outer_train_size in np.arange(0.88, 1, 0.01):
-        outer_train_size = round(outer_train_size, 2)
-        # 划分正常样本为测试集和其他（用于再次划分为训练集和验证集）
-        x, x_test, y, y_test = train_test_split(normals, normal_labels, train_size=outer_train_size, random_state=3)
-
-        # 将测试集中添加异常点，称为真正的测试集
-        x_test = np.vstack((outliers, x_test))
-        y_test = np.hstack((outlier_labels, y_test))
-        # y_test[y_test == 'o'] = -1; y_test[y_test == 'n'] = 1
-        # 把y_test中满足条件 y_test == 'o'的输出为-1，其他输出为1。最后，转化为list，方便计算roc
-        y_test = list(np.where(y_test == 'o', -1, 1))
-
-        for train_size in np.arange(0.88, 1, 0.01):
-            train_size = round(train_size, 2)
-            # 划分其他为训练集和验证集
-            x_train, x_cv, y_train, y_cv = train_test_split(x, y, train_size=train_size, random_state=3)
-
-            # print('-' * 30)
-            # print("outer train size:", outer_train_size)
-            # print("train size:", train_size)
-            multi_model(x_train=x_train, x_test=x_test, y_train=y_train, y_test=y_test, threshold=0.5)
-            # print('-' * 30)
+    PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test, random_state=random_state,
+                       cluster=cluster, n_cluster=n_cluster, linkage=linkage, branching_factor=branching_factor,
+                       cluster_threshold=cluster_threshold, sparse=sparse, plot_roc=plot_roc)
