@@ -9,6 +9,7 @@
 import numpy as np
 import pandas as pd
 import random
+from sklearn import preprocessing
 
 
 
@@ -45,4 +46,8 @@ def prepare_data(path, multiple=2, random_state=3):
     normals = normals[cutoff:]
     normal_labels = normal_labels[cutoff:]
 
-    return normals, normal_labels, x_test, y_test
+    x_train = preprocessing.minmax_scale(normals)
+    y_train = normal_labels
+    x_test = preprocessing.minmax_scale(x_test)
+
+    return x_train, y_train, x_test, y_test

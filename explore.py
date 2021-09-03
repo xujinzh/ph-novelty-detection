@@ -6,12 +6,13 @@
 # @File    : explore.py
 # @Software: PyCharm
 
-from tda import train
-import os
-from tda.timestamps import display_time
-from multiprocessing import Pool
 import argparse
+import os
 import warnings
+from multiprocessing import Pool
+
+from tda import train
+from tda.timestamps import display_time
 
 warnings.simplefilter("ignore")
 
@@ -45,15 +46,21 @@ def explore(cluster):
         if not os.path.isfile(file_path):
             print(f'文件：{file_path} 不是数据集，将跳过该文件！！！')
             continue
+        csv_file = os.path.basename(file_path)
+        dataname = csv_file.split('-')[0]
+        output_csv_name = f'data={dataname}-cluster={cluster}.csv'
+        if output_csv_name in os.listdir('output'):
+            # 如果上次已经运行出结果，则跳过，不重复运行
+            continue
         train.just_do_it(path=file_path, cluster=cluster, multiple=multiple, random_state=3)
 
 
 @display_time("all")
 def do():
-    clusters = ['tomato', 'spectral', 'hierarchical', 'birch',  'kmeans', 'optics', 'dbscan']
+    clusters = ['tomato', 'spectral', 'hierarchical', 'birch', 'kmeans', 'optics', 'dbscan']
 
     # 使用CPU 多核心多进程加速计算
-    p = Pool(processes=os.cpu_count())
+    p = Pool(processes=max(os.cpu_count() - 1, 1))
     p.map(explore, clusters)
 
     # # 使用单进程计算

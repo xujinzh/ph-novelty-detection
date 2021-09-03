@@ -43,7 +43,7 @@ def svm_nd(x_train, x_test, y_test, plot_roc=False):
     for kernel in tqdm(['linear', 'poly', 'rbf', 'sigmoid']):
         print(f'SVM---{kernel}---{"*" * 33}')
         for gamma in ["scale", "auto"]:
-            clf = OneClassSVM(kernel=kernel, gamma=gamma)
+            clf = OneClassSVM(kernel=kernel, gamma=gamma, max_iter=10000)
             clf.fit(x_train)
             y_scores = clf.score_samples(x_test)
             svm = roc.area(y_test=y_test, y_scores=y_scores, pos_label=1, title='OC-SVM - ', plot_roc=plot_roc)
