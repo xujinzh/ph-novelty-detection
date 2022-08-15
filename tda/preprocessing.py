@@ -46,8 +46,10 @@ def prepare_data(path, multiple=2, random_state=3):
     normals = normals[cutoff:]
     normal_labels = normal_labels[cutoff:]
 
-    x_train = preprocessing.minmax_scale(normals)
+    ####################################################增加归一化预处理
+    # x_train = preprocessing.minmax_scale(normals)
+    x_train = normals
     y_train = normal_labels
-    x_test = preprocessing.minmax_scale(x_test)
+    # x_test = preprocessing.minmax_scale(x_test)
 
     return x_train, y_train, x_test, y_test

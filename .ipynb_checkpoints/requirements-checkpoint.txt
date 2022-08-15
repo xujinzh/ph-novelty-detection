@@ -1,0 +1,12 @@
+gudhi
+ripserplusplus
+ripser
+persim
+torch
+scikit-learn
+pandas
+matplotlib
+numpy
+multiprocessing
+tqdm
+random

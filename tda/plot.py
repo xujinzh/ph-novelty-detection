@@ -15,7 +15,6 @@ from tda import comparison
 from tda import preprocessing
 
 
-
 def draw(auc_classical, auc_ph, file_name, path):
     lof_score, svm_score = auc_classical
     auc_ph.sort(reverse=True, key=lambda x: x[1])

@@ -13,6 +13,7 @@ import os
 from tqdm import trange
 from tda.preprocessing import prepare_data
 from tda.plot import draw, drawMul
+from utils.now import current_time
 
 
 def just_do_it(path, cluster, multiple, random_state):
@@ -24,7 +25,7 @@ def just_do_it(path, cluster, multiple, random_state):
 
     # 比较算法 lof and svm
     auc_classical = classical(x_train=normals, x_test=x_test, y_test=y_test)
-    print("经典算法处理完成！")
+    print(f"{current_time()} 经典算法处理完成！")
 
     auc_ph = []
     print("\t正在使用聚类算法 {0} 处理数据集 {1} ...".format(cluster, file_name.split('-')[0]))
@@ -32,21 +33,21 @@ def just_do_it(path, cluster, multiple, random_state):
     if cluster in ['spectral', 'kmeans', 'tomato']:
         for n_cluster in trange(8, 39):
             ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels, y_test=y_test,
-                                    cluster=cluster, n_cluster=n_cluster, random_state=random_state)
+                                    cluster=cluster, n_cluster=n_cluster, random_state=random_state, mp_score=False)
             auc_ph.append([(cluster, n_cluster), ph])
     elif cluster == 'hierarchical':
         for n_cluster in trange(8, 39):
             for linkage in ['ward', 'complete', 'average', 'single']:
                 ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels,
                                         y_test=y_test, cluster=cluster, n_cluster=n_cluster,
-                                        linkage=linkage, random_state=random_state)
+                                        linkage=linkage, random_state=random_state, mp_score=False)
                 auc_ph.append([(cluster, n_cluster, linkage), ph])
     elif cluster in ['dbscan', 'optics']:
         for eps in trange(2, 19):
             for min_samples in range(2, 19):
                 ph = PersistentHomology(x_train=normals, x_test=x_test, y_train=normal_labels,
                                         y_test=y_test, cluster=cluster, eps=eps,
-                                        min_samples=min_samples, random_state=random_state)
+                                        min_samples=min_samples, random_state=random_state, mp_score=False)
                 auc_ph.append([(cluster, eps, min_samples), ph])
     elif cluster == 'birch':
         for n_cluster in trange(10, 28):
@@ -56,10 +57,10 @@ def just_do_it(path, cluster, multiple, random_state):
                                             y_test=y_test, cluster=cluster, n_cluster=n_cluster,
                                             branching_factor=branching_factor,
                                             cluster_threshold=cluster_threshold,
-                                            random_state=random_state)
+                                            random_state=random_state, mp_score=False)
                     auc_ph.append([(cluster, n_cluster, branching_factor, cluster_threshold), ph])
 
     print("\t聚类算法 {0} 完成数据集 {1} 的处理工作 ^_^".format(cluster, file_name.split('-')[0]))
 
-    print("开始画图")
+    print(f"{current_time()} 开始画图")
     drawMul(auc_classical, auc_ph, file_name, os.path.split(path)[0])

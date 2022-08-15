@@ -17,13 +17,16 @@ from tda.preprocessing import prepare_data
 from tqdm import trange
 from tqdm import tqdm
 from tda.timestamps import display_time
+from sklearn import preprocessing
+from utils.now import current_time
+
 import warnings
 
 warnings.simplefilter("ignore")
 
 
 # @display_time("LOF")
-def lof_nd(x_train, x_test, y_test, plot_roc=False):
+def lof_nd0(x_train, x_test, y_test, plot_roc=False):
     # lof novelty detection
     auc_lof = []
     for n_neighbors in trange(10, 30):
@@ -36,14 +39,24 @@ def lof_nd(x_train, x_test, y_test, plot_roc=False):
     return auc_lof
 
 
+@display_time("LOF")
+def lof_nd(x_train, x_test, y_test, n_neighbors, algorithm, plot_roc=False):
+    # lof novelty detection
+    clf = LocalOutlierFactor(novelty=True, n_neighbors=n_neighbors, algorithm=algorithm)
+    clf.fit(x_train)
+    y_scores = clf.score_samples(x_test)
+    lof = roc.area(y_test=y_test, y_scores=y_scores, pos_label=1, title='LOF - ', plot_roc=plot_roc)
+    print(f"\n\033[1;33m{current_time()} LOF AUC: {lof}\033[0m")
+    return lof
+
+
 # @display_time("SVM")
-def svm_nd(x_train, x_test, y_test, plot_roc=False):
+def svm_nd0(x_train, x_test, y_test, plot_roc=False):
     # svm novelty detection
     auc_svm = []
     for kernel in tqdm(['linear', 'poly', 'rbf', 'sigmoid']):
-        print(f'SVM---{kernel}---{"*" * 33}')
         for gamma in ["scale", "auto"]:
-            clf = OneClassSVM(kernel=kernel, gamma=gamma, max_iter=10000)
+            clf = OneClassSVM(kernel=kernel, gamma=gamma, max_iter=100000)
             clf.fit(x_train)
             y_scores = clf.score_samples(x_test)
             svm = roc.area(y_test=y_test, y_scores=y_scores, pos_label=1, title='OC-SVM - ', plot_roc=plot_roc)
@@ -51,11 +64,35 @@ def svm_nd(x_train, x_test, y_test, plot_roc=False):
     return auc_svm
 
 
+@display_time("SVM")
+def svm_nd(x_train, x_test, y_test, kernel, gamma, plot_roc=False):
+    # svm novelty detection
+    clf = OneClassSVM(kernel=kernel, gamma=gamma, max_iter=100000)
+    clf.fit(x_train)
+    y_scores = clf.score_samples(x_test)
+    svm = roc.area(y_test=y_test, y_scores=y_scores, pos_label=1, title='OC-SVM - ', plot_roc=plot_roc)
+    print(f"\n\033[1;33m{current_time()} SVM AUC: {svm}\033[0m")
+    return svm
+
+
 def classical(x_train, x_test, y_test, plot_roc=False):
-    print("正在使用LOF处理")
-    auc_lof = lof_nd(x_train, x_test, y_test, plot_roc)
-    print("正在使用SVM处理")
-    auc_svm = svm_nd(x_train, x_test, y_test, plot_roc)
+    # x_train = preprocessing.minmax_scale(x_train)
+    # x_test = preprocessing.minmax_scale(x_test)
+
+    print(f"{current_time()} 正在使用LOF处理")
+    auc_lof = []
+    for n_neighbors in trange(10, 30):
+        for algorithm in tqdm(['auto', 'ball_tree', 'kd_tree', 'brute']):
+            lof = lof_nd(x_train=x_train, x_test=x_test, y_test=y_test, plot_roc=plot_roc, n_neighbors=n_neighbors,
+                         algorithm=algorithm)
+            auc_lof.append([(n_neighbors, algorithm), lof])
+
+    print(f"{current_time()} 正在使用SVM处理")
+    auc_svm = []
+    for kernel in tqdm(['linear', 'poly', 'rbf', 'sigmoid']):
+        for gamma in tqdm(["scale", "auto"]):
+            svm = svm_nd(x_train=x_train, x_test=x_test, y_test=y_test, kernel=kernel, gamma=gamma)
+            auc_svm.append([(kernel, gamma), svm])
 
     return auc_lof, auc_svm
 

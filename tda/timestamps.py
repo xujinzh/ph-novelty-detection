@@ -8,7 +8,8 @@ def display_time(text):
             start_time = time.time()
             result = func(*args, **kwargs)
             end_time = time.time()
-            print(f'{text} time consumed: {end_time - start_time} seconds')
+            now = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+            print(f'{now} {text} time consumed: {end_time - start_time} seconds')
             return result
 
         return wrapper
