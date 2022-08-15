@@ -97,7 +97,6 @@ class PHNovDet(object):
         self.standard_deviation_coefficient = standard_deviation_coefficient
         self.random_state = random_state
         self.shuffle = shuffle
-        self.sparse = sparse
         self.shape = None
         self.shape_data = None
         self.cross_separation = cross_separation
