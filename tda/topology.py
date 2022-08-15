@@ -193,7 +193,7 @@ class PHNovDet(object):
 
         start_time = time()
         if cluster == 'tomato':
-            model = Tomato(density_type="DTM", n_clusters=n_cluster, n_jobs=-1)
+            model = Tomato(density_type="DTM", n_clusters=n_cluster)
         elif cluster == 'birch':
             model = Birch(n_clusters=n_cluster, branching_factor=branching_factor,
                           threshold=cluster_threshold)
